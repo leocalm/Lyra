@@ -1,0 +1,55 @@
+Password: Lyra sponge
+Salt: saltsaltsaltsalt
+tCost: 10
+nRows: 10
+nCols = 64
+outlen: 64
+Out: 38 6b 3c 57 4d 5a e9 1d 73 21 53 fe 67 fd e4 6e 2a be 14 4b bc 84 0b d0 5f 9e 85 ab bd 6a fa 44 77 a2 25 83 32 c7 02 96 9d 35 8e df 04 3b b9 bd 47 98 5d 0b 02 3e 0a 4d 0a 25 fc 14 5c 09 f4 bf
+
+Password: Lyra sponge
+Salt: saltsaltsaltsalt
+tCost: 1
+nRows: 100
+nCols = 64
+outlen: 64
+Out: c8 ca 6d 9c e9 34 10 2d 55 b5 77 0a 97 42 2a da 6a 16 d0 56 77 42 ea 4b 2d 59 78 d0 21 49 d5 f8 79 0b 6b 56 f8 7c c4 cc 88 89 5a 35 40 ef 7b c2 9c 73 6c 21 b4 27 0b b5 a1 29 87 d5 59 e7 44 e0
+
+Password: Lyra sponge
+Salt: saltsaltsaltsalt
+tCost: 3
+nRows: 100
+nCols = 64
+outlen: 64
+Out: ca 29 42 77 19 41 61 95 56 62 85 e6 09 9d 42 b3 9b 93 c8 8f 60 97 30 62 69 9a 6a dd 6f 1a 7a d1 f0 4f 68 e8 6b 35 ea c1 f6 3e 82 58 93 f1 60 16 ca b3 f5 fb a6 25 9a 42 29 36 b7 24 97 29 2c 65
+
+Password: Lyra sponge
+Salt: saltsaltsaltsalt
+tCost: 10
+nRows: 100
+nCols = 64
+outlen: 64
+Out: eb 63 f2 92 a3 3b 85 93 da 42 34 20 0b bc 32 01 0a 0f 5a 1d 64 b4 c6 b9 77 09 37 9a 90 1f 28 41 85 3a 1b fc 66 a3 52 c1 c4 67 a0 7d 40 ce a7 7c 70 9e 76 81 d6 94 e7 f9 e9 02 c3 67 e6 e7 b2 63
+
+Password: pleaseletmein
+Salt: saltsaltsaltsalt
+tCost: 10
+nRows: 100
+nCols = 64
+outlen: 64
+Out: 7e 74 e2 e8 87 a4 47 9d b7 09 f2 54 ff 09 72 5f 9f 13 42 65 d7 a6 85 50 02 76 53 f4 29 5c 4e 7d 60 4c 02 44 6f 87 db 95 6b af f8 0d 2c ef d0 4f 7c 26 37 ce a4 64 e9 13 37 a2 c5 54 f6 3d e6 cb
+
+Password: pleaseletmein
+Salt: NaClNaClNaClNaCl
+tCost: 10
+nRows: 100
+nCols = 64
+outlen: 64
+Out: 05 16 70 02 23 99 4e 77 08 e7 f9 63 45 94 71 4b d5 5d 1d 3f 6f a4 87 a2 7f ad b9 61 9e 8f 91 a5 61 e6 c2 56 b6 9d 8c 29 40 b8 4b 3b 4e 52 d1 61 83 c1 36 7c aa 76 f1 23 84 d6 10 c4 f7 4d 9e 6e
+
+Password: Lyra sponge
+Salt: NaClNaClNaClNaCl
+tCost: 10
+nRows: 100
+nCols = 64
+outlen: 64
+Out: 1e 56 63 91 30 f4 da 9d f3 84 2b 81 c6 ee e2 05 70 0f 8b 66 b2 c7 fc 5c 64 c6 e8 f3 97 da ae 10 96 1e 3c 50 85 d0 d5 a2 b0 5c e8 f5 ae a7 4a 76 50 50 01 e0 73 4f 2c 3d 39 5a 7b ee 47 8f 07 b8
