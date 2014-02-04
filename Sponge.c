@@ -33,7 +33,7 @@ void printArray(unsigned char *array, unsigned int size, char *name) {
  * 
  * @param state         The 1024-bit array to be initialized
  */
-void inline initState(uint64_t state[/*16*/]){
+void initState(uint64_t state[/*16*/]){
     memset(state, 0,            BLOCK_LEN_BYTES);
     memcpy(state + BLOCK_LEN_INT64, blake2b_IV,   BLOCK_LEN_BYTES);
 }
