@@ -7,7 +7,7 @@
 CC?=gcc
 CFLAGS=-std=c99 -Wall -pedantic -O3
 
-BINDIR=../bin
+BINDIR=../bin/
 BIN=$(BINDIR)/Lyra
 nCols=64
 
