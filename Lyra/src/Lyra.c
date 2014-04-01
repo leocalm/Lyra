@@ -86,14 +86,15 @@ int lyra(const unsigned char *pwd, int pwdSize, const unsigned char *salt, int t
 
     //========================================================//
 
-	//================== New Setup Phase =====================//
-	absorbBlock(state, MemMatrix[0]);
-	reducedSqueezeRow(state, (uint64_t*) MemMatrix[0]);
-	for (row = 1; row < nRows; row++) {
-		MemMatrix[row] = malloc(ROW_LEN_BYTES);
-		reducedDuplexRowSetup(state, (uint64_t*) MemMatrix[row], MemMatrix[row-1]);
-	}
-	//========================================================//
+
+    //================== Setup Phase =====================//
+    absorbBlock(state, MemMatrix[0]);
+    reducedSqueezeRow(state, (uint64_t*) MemMatrix[0]);
+    for (row = 1; row < nRows; row++) {
+             MemMatrix[row] = malloc(ROW_LEN_BYTES);
+             reducedDuplexRowSetup(state, (uint64_t*) MemMatrix[row], MemMatrix[row-1]);
+    }
+    //========================================================//
 
     //================== Wandering phase =========================//
     row = 0;
