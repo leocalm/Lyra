@@ -1,9 +1,23 @@
-/*
-  Implementation of a sponge function that uses the F function from Blake 2
-
-  Author: Leonardo de Campos Almeida
+/**
+ * A simple implementation of Blake2b's internal permutation 
+ * in the form of a sponge.
+ * 
+ * Author: The Lyra PHC team (http://www.lyra-kdf.net/).
+ * 
+ * This software is hereby placed in the public domain.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ''AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include <string.h>
 #include <stdio.h>
 #include "Sponge.h"
@@ -34,8 +48,15 @@ void printArray(unsigned char *array, unsigned int size, char *name) {
  * @param state         The 1024-bit array to be initialized
  */
 void inline initState(uint64_t state[/*16*/]){
-    memset(state, 0,            BLOCK_LEN_BYTES);
-    memcpy(state + BLOCK_LEN_INT64, blake2b_IV,   BLOCK_LEN_BYTES);
+    memset(state, 0, 64); //first 512 bis are zeros
+    state[8] = blake2b_IV[0];
+    state[9] = blake2b_IV[1];
+    state[10] = blake2b_IV[2];
+    state[11] = blake2b_IV[3];
+    state[12] = blake2b_IV[4];
+    state[13] = blake2b_IV[5];
+    state[14] = blake2b_IV[6];
+    state[15] = blake2b_IV[7];
 }
 
 /**
@@ -94,7 +115,7 @@ void squeeze(uint64_t *state, byte *out, unsigned int len) {
  * of type uint64_t), using Blake2b's G function as the internal permutation
  * 
  * @param state The current state of the sponge 
- * @param in    The uint64_t array to be absorbed
+ * @param in    The block to be absorbed (BLOCK_LEN_INT64 words)
  */
 void absorbBlock(uint64_t *state, const uint64_t *in) {
     //XORs the first BLOCK_LEN_INT64 words of "in" with the current state
@@ -106,25 +127,41 @@ void absorbBlock(uint64_t *state, const uint64_t *in) {
     state[5] ^= in[5];
     state[6] ^= in[6];
     state[7] ^= in[7];
-    //printArray(state, 128, "state");
 
+    //Applies the transformation f to the sponge's state
     blake2bLyra(state);
 }
 
 /**
- * <b>OK</b>
- * 
- * Performs an absorb operation a 128-bit salt, applying the required 10*1 padding
+ * Absorbs the salt, applying the required 10*1 padding
  * @param state The current state of the sponge 
- * @param salt  The 128-bit salt to be absorbed
+ * @param salt	The salt to be absorbed
+ * @param saltlen  The lenght of the salt, in bytes
  */
-void absorbPaddedSalt(uint64_t *state, const uint64_t *salt) {
-    //XORs the first BLOCK_LEN_INT64 words of "in" with the current state
-    state[0] ^= salt[0];
-    state[1] ^= salt[1];
-    state[2] ^= 0x80;
-    state[7] ^= 0x0100000000000000ULL;
+void absorbPaddedSalt(uint64_t *state, uint64_t *salt, int saltlen) {
+    int i;
+    int nBlocksSalt = saltlen / BLOCK_LEN_BYTES;
+    
+    //Absorbs full blocks
+    uint64_t *ptrWord = salt;
+    for(i = nBlocksSalt ; i > 0; i--){
+	absorbBlock(state, ptrWord);
+	ptrWord += BLOCK_LEN_INT64;
+    }
+        
+    //Absorbs trailing bytes with padding
+    byte *ptrByteState = (byte*) state;
+    byte *ptrByteSalt = (byte*) salt;
+    //Absorbs the padded salt
+    for(i = saltlen - nBlocksSalt*BLOCK_LEN_BYTES ; i > 0 ; i--){
+	*ptrByteState ^= *ptrByteSalt;
+	ptrByteState++;
+	ptrByteSalt++;
+    }
+    *ptrByteState ^= 0x80;		//first byte of padding: right after the salt
+    state[7] ^= 0x0100000000000000ULL;	//last byte of padding: at the end of the state    
    
+    //Applies the transformation f to the sponge's state
     blake2bLyra(state);
 }
 
@@ -150,8 +187,6 @@ void reducedAbsorbBlock(uint64_t *state, const uint64_t *in) {
 }
 
 /** 
- * <b>OK: Verify whether to use memcpy or copy by hand</b>
- * 
  * Performs a squeeze operation for an entire row, using reduced 
  * Blake2b's G function as the internal permutation
  * 
@@ -169,8 +204,6 @@ void reducedSqueezeRow(uint64_t* state, uint64_t* row) {
 }
 
 /** 
- * <b>OK</b>
- * 
  * Performs a duplex operation for an entire row, using reduced-round 
  * Blake2b's G function as the internal permutation, already XORing 
  * the output with the provided input

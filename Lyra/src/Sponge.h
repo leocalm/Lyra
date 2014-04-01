@@ -1,8 +1,23 @@
-/*
- * Sponge.h
+/**
+ * Header file for Blake2b's internal permutation in the form of a sponge. 
+ * This code is based on the original Blake2b's implementation provided by 
+ * Samuel Neves (https://blake2.net/)
+ * 
+ * Author: The Lyra PHC team (http://www.lyra-kdf.net/).
+ * 
+ * This software is hereby placed in the public domain.
  *
- *  Created on: Apr 21, 2013
- *      Author: leonardo
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ''AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef SPONGE_H_
@@ -63,7 +78,7 @@ void squeeze(uint64_t *state, unsigned char *out, unsigned int len);
 
 void absorbBlock(uint64_t *state, const uint64_t *in);
 
-void absorbPaddedSalt(uint64_t *state, const uint64_t *salt);
+void absorbPaddedSalt(uint64_t *state, uint64_t *salt, int saltlen);
 
 void reducedAbsorbBlock(uint64_t *state, const uint64_t *in);
 
