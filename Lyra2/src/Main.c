@@ -98,7 +98,7 @@ int testVectors(unsigned int  t, unsigned int  r) {
      * and values varying from 128 to 255. The salt size is fixed in 16 bytes, 
 	 * and its value varies from 0 to 256.
 	 */
-    for (countSample = 128; countSample <= 256; countSample++) {
+    for (countSample = 128; countSample < 256; countSample++) {
         pwdLen = countSample - 127;
         int count;
         pwd = malloc(sizeof (pwd) * pwdLen);

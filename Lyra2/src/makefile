@@ -9,7 +9,7 @@ NVCC=nvcc
 CFLAGS=-std=c99 -Wall -pedantic -O3
 
 BINDIR=../bin
-BIN=$(BINDIR)/Lyra
+BIN=$(BINDIR)/Lyra2
 BINCUDA=$(BINDIR)/Lyra2CUDA
 nCols=64
 
@@ -46,7 +46,7 @@ generic-x86-64:	    Lyra2.c Sponge.c Main.c Lyra2.h Sponge.h
 
 linux-x86-64-sse2:	$(SSEDIR)Lyra2.c $(SSEDIR)Sponge.c Main.c $(SSEDIR)Lyra2.h $(SSEDIR)Sponge.h
 	mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) $(SSEDIR)Sponge.c $(SSEDIR)Lyra2.c Main.c -o $(BIN) -DN_COLS=$(nCols) -O3
+	$(CC) $(CFLAGS) $(SSEDIR)Sponge.c $(SSEDIR)Lyra2.c Main.c -o $(BIN) -DN_COLS=$(nCols) -O3 -msse2
 	@echo "Build completed, binaries in $(BIN)"
 	
 linux-x86-64-cuda:  $(CUDADIR)Lyra2.cu $(CUDADIR)Sponge.cu $(CUDADIR)Main.cu $(CUDADIR)Lyra2.h $(CUDADIR)Sponge.h
@@ -66,7 +66,7 @@ windows-x86-64:	    Lyra2.c Sponge.c Main.c Lyra2.h Sponge.h
 
 win-cygwin-x86-64-sse2:	$(SSEDIR)Lyra2.c $(SSEDIR)Sponge.c Main.c $(SSEDIR)Lyra2.h $(SSEDIR)Sponge.h
 	mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) $(SSEDIR)Sponge.c $(SSEDIR)Lyra2.c Main.c -o $(BIN) -DN_COLS=$(nCols) -O3
+	$(CC) $(CFLAGS) $(SSEDIR)Sponge.c $(SSEDIR)Lyra2.c Main.c -o $(BIN) -DN_COLS=$(nCols) -O3 -msse2
 	@echo "Build completed, binaries in $(BIN)"
 	
 clean:

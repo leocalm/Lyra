@@ -36,6 +36,5 @@ typedef unsigned char byte ;
 
 
 int lyra(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const unsigned char *salt, int saltlen, int timeCost, int nRows, int nCols);
-//int lyra(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const unsigned char *salt, int saltlen, int timeCost, int nRows);
 
 #endif /* LYRA_H_ */

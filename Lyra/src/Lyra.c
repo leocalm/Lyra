@@ -24,47 +24,10 @@
 #include "Sponge.h"
 
 /**
- Executes Lyra based on the G function from Blake 2.
-
- Inputs:
-         pwd - user password
-         pwdSize - password size (this implementation accepts passwords having up to 46 bytes)
-         salt - salt
-         saltSize - salt size
-         timeCost - parameter to determine the processing time
-         nCols - number of columns of the inner matrix
-         nRows - number or rows of the inner matrix
-         kLen - derived key length, in bytes
- Output:
-         K - derived key
- */
-
-/**
- * Executes Lyra2 based on the G function from Blake2b. The number of columns of the memory matrix is set to nCols = 64.
- * This version supports salts and passwords whose combined length is smaller than the size of the memory matrix, 
- * (i.e., (nRows x nCols x b) bits,  where "b" is the underlying sponge's bitrate) 
- * 
- * @param out     The derived key to be output by the algorithm
- * @param outlen  Desired key length
- * @param in      User password
- * @param inlen   Password length
- * @param salt    Salt
- * @param saltlen Salt length
- * @param t_cost  Parameter to determine the processing time (T)
- * @param m_cost  Memory cost parameter (defines the number of rows of the memory matrix, R)
- * 
- * @return          0 if the key is generated correctly; -1 if there is an error (usually due to lack of memory for allocation)
- */
-/*
-int lyra(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const unsigned char *salt, int saltlen, int timeCost, int nRows) {
-    return lyra(K, kLen, pwd, pwdlen, salt, saltlen, timeCost, nRows, N_COLS);
-}
-*/
-
-/**
- * Executes Lyra2 based on the G function from Blake2b. This version supports salts and passwords
+ * Executes Lyra based on the G function from Blake2b. This version supports salts and passwords
  * whose combined length is smaller than the size of the memory matrix, (i.e., (nRows x nCols x b) bits, 
- * where "b" is the underlying sponge's bitrate) 
+ * where "b" is the underlying sponge's bitrate). In this implementation, the "basil" is composed by all 
+ * integer parameters, in the order they are provided.
  * 
  * @param K         The derived key to be output by the algorithm
  * @param kLen      Desired key length
@@ -105,26 +68,41 @@ int lyra(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const
     }
     //==========================================================================/
 
-    //============= Getting the password + salt padded with 10*1 ===============//
+    //============= Getting the password + salt + basil padded with 10*1 ===============//
 
     //OBS.:The memory matrix will temporarily hold the password: not for saving memory, 
     //but this ensures that the password copied locally will be overwritten as soon as possible
 
-    //First, we clean enough blocks for the password, salt and padding
-    int nBlocksInput = ((saltlen + pwdlen) / BLOCK_LEN_BYTES) + 1;
+    //First, we clean enough blocks for the password, salt, basil and padding
+    int nBlocksInput = ((saltlen + pwdlen + 6*sizeof(int)) / BLOCK_LEN_BYTES) + 1;
     byte *ptrByte = (byte*) wholeMatrix;
     memset(ptrByte, 0, nBlocksInput * BLOCK_LEN_BYTES);
 
-    //Prepends the salt to the password
-    memcpy(ptrByte, salt, saltlen);
-
-    //Concatenates the password
-    ptrByte += saltlen;
+    //Prepends the password
     memcpy(ptrByte, pwd, pwdlen);
+    ptrByte += pwdlen;
+    
+    //Concatenates the salt
+    memcpy(ptrByte, salt, saltlen);
+    ptrByte += saltlen;
+    
+    //Concatenates the basil: every integer passed as parameter, in the order they are provided by the interface
+    memcpy(ptrByte, &kLen, sizeof(int));
+    ptrByte += sizeof(int);
+    memcpy(ptrByte, &pwdlen, sizeof(int));
+    ptrByte += sizeof(int);
+    memcpy(ptrByte, &saltlen, sizeof(int));
+    ptrByte += sizeof(int);
+    memcpy(ptrByte, &timeCost, sizeof(int));
+    ptrByte += sizeof(int);
+    memcpy(ptrByte, &nRows, sizeof(int));
+    ptrByte += sizeof(int);
+    memcpy(ptrByte, &nCols, sizeof(int));
+    ptrByte += sizeof(int);
+    
 
     //Now comes the padding
-    ptrByte += pwdlen;
-    *ptrByte = 0x80; //first byte of padding: right after the password
+    *ptrByte = 0x80; //first byte of padding: right after the end of the input
     ptrByte = (byte*) wholeMatrix; //resets the pointer to the start of the memory matrix
     ptrByte += nBlocksInput * BLOCK_LEN_BYTES - 1; //sets the pointer to the correct position: end of incomplete block
     *ptrByte ^= 0x01; //last byte of padding: at the end of the last incomplete block
@@ -185,6 +163,9 @@ int lyra(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const
     //=============== Freeing the memory =====================//
     free(memMatrix);
     free(wholeMatrix);
+    
+    //Wiping out the sponge's internal state before freeing it
+    memset(state, 0, 16 * sizeof (uint64_t));
     free(state);
     //========================================================//
 
