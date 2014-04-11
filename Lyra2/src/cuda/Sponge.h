@@ -73,7 +73,20 @@ __device__ static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
     G(r,6,v[ 2],v[ 7],v[ 8],v[13]); \
     G(r,7,v[ 3],v[ 4],v[ 9],v[14]);
 
+/**
+ * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
+ * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges
+ * typically have their internal state initialized with zeros, Blake2b's G function
+ * has a fixed point: if the internal state and message are both filled with zeros. the 
+ * resulting permutation will always be a block filled with zeros; this happens because 
+ * Blake2b does not use the constants originally employed in Blake2 inside its G function, 
+ * relying on the IV for avoiding possible fixed points.
+ * 
+ * @param state         The 1024-bit array to be initialized
+ */
 void initState(uint64_t state[/*16*/]);
+
+
 void squeeze(uint64_t *state, unsigned char *out, unsigned int len);
 void squeezeBlock(uint64_t* state, uint64_t* block);
 __global__ void absorbBlock(uint64_t *state, const uint64_t *in);

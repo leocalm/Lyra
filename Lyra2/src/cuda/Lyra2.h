@@ -24,18 +24,15 @@
 
 typedef unsigned char byte ;
 
-#define SALT_LEN_INT64 2                                //Salts must have 128 bits (=16 bytes, =2 uint64_t)
-#define SALT_LEN_BYTES (SALT_LEN_INT64 * 8)             //Salt length, in bytes
-
 #define BLOCK_LEN_INT64 12                               //Block lenght: 768 bits (=96 bytes, =8 uint64_t)
 #define BLOCK_LEN_BYTES (BLOCK_LEN_INT64 * 8)           //Block lenght, in bytes
 
 #ifndef N_COLS
-#define N_COLS 64                                       //Number of columns in the memory matrix: fixed to 64
+#define N_COLS 64                                       //Number of columns in the memory matrix: fixed to 64 by default
 #endif
 
-#define ROW_LEN_INT64 (BLOCK_LEN_INT64 * N_COLS)        //Total length of a row: 64 blocks, or 512 uint64_t
-#define ROW_LEN_BYTES (ROW_LEN_INT64 * 8)               //Number of bytes per row: 512 * 8
+#define ROW_LEN_INT64 (BLOCK_LEN_INT64 * N_COLS)        //Total length of a row: N_COLS blocks
+#define ROW_LEN_BYTES (ROW_LEN_INT64 * 8)               //Number of bytes per row
 
 
 int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const unsigned char *salt, int saltlen, int timeCost, int nRows, int nCols);

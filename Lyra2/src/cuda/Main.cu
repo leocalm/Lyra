@@ -26,31 +26,40 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
-#include "Sponge.h"
 #include "Lyra2.h"
+#include "Sponge.h"
 
-int testVectors(unsigned int  t, unsigned int  r) {
+
+/**
+ * Generates the test vectors for Lyra2.
+ *
+ * @param t Parameter to determine the processing time (T)
+ * @param r  Memory cost parameter (defines the number of rows of the memory matrix, R)
+ */
+int testVectors(unsigned int t, unsigned int r) {
     //=================== Basic variables, with default values =======================//
     int kLen = 64;
     unsigned char *pwd;
     int pwdLen = 11;
     unsigned char *salt;
     int saltLen = 16;
-    //==========================================================================/
 
     srand(time(NULL));
+    int i;
+    int countSample;
+    int indexSalt = 0;
+    //==========================================================================/
 
     unsigned char *K = (unsigned char *) calloc(sizeof K, (kLen));
     if (K == NULL) {
         printf("Memory allocation error.\n");
         exit(1);
-    }
-
-    int i;
-    int countSample;
-    int indexSalt = 0;
-
-    //testing from 0 to 128
+    }	
+	
+    /* Generating vectors with the input size varying from 0 to 128 bytes,
+     * and values varying from 0 to 127. The salt size is fixed in 16 bytes, 
+     * and its value varies from 0 to 256.
+     */
     for (countSample = 0; countSample <= 128; countSample++) {
         pwdLen = countSample;
         int count;
@@ -92,8 +101,11 @@ int testVectors(unsigned int  t, unsigned int  r) {
         }
         printf("\n");
     }
-    
-    //testing from 128 to 256
+	
+    /* Generating vectors with the input size varying from 0 to 128 bytes,
+     * and values varying from 128 to 255. The salt size is fixed in 16 bytes, 
+     * and its value varies from 0 to 256.
+     */
     for (countSample = 128; countSample <= 256; countSample++) {
         pwdLen = countSample - 127;
         int count;
@@ -139,14 +151,15 @@ int testVectors(unsigned int  t, unsigned int  r) {
 }
 
 int main(int argc, char *argv[]) {
+
     //=================== Basic variables, with default values =======================//
-    int kLen = 64;
-    int t = 0;
-    int r = 0;
+    unsigned int kLen = 64;
+    unsigned int t = 0;
+    unsigned int r = 0;
     char *pwd = "Lyra sponge";
-    int pwdLen = 11;
+    unsigned int pwdLen = 11;
     char *salt = "saltsaltsaltsalt";
-    int saltLen = 16;
+    unsigned int saltLen = 16;
     //==========================================================================/
 
     //	Defines in which GPU will execute
@@ -171,6 +184,7 @@ int main(int argc, char *argv[]) {
                 printf("Invalid options.\nFor more information, try \"Lyra2 --help\".\n");
                 return 0;
             }
+			break;
         case 6:
             pwd = argv[1];
             pwdLen = strlen(pwd);
@@ -190,6 +204,7 @@ int main(int argc, char *argv[]) {
                 printf("Invalid options.\nFor more information, try \"Lyra2 --help\".\n");
                 return 0;
             }
+			break;
         default:
             printf("Invalid options.\nTry \"Lyra2 --help\" for help.\n");
             return 0;
@@ -202,27 +217,46 @@ int main(int argc, char *argv[]) {
     }
     printf("Inputs: \n");
     printf("\tPassword: %s\n", pwd);
-    printf("\tPassword Size: %d\n", pwdLen);
+    printf("\tPassword Length: %u\n", pwdLen);
     printf("\tSalt: %s\n", salt);
-    printf("\tOutput Size: %d\n", kLen);
+    printf("\tSalt Length: %u\n", saltLen);	
+    printf("\tOutput Length: %u\n", kLen);
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     printf("Parameters: \n");
-    printf("\tT: %d\n", t);
-    printf("\tR: %d\n", r);
-    printf("\tC: %d\n", N_COLS);
-    printf("\tMemory: %ld bits\n", ((long) (N_COLS * r * BLOCK_LEN_BYTES)));
+    printf("\tT: %u\n", t);
+    printf("\tR: %u\n", r);
+    printf("\tC: %u\n", N_COLS);
+    size_t sizeMemMatrix = (size_t) ((size_t)r * (size_t)ROW_LEN_BYTES);
+           
+    if(sizeMemMatrix > (4294967296-72)){
+        printf("\tMemory: %ld bytes (IMPORTANT: This implementation is known to have "
+                "issues for such a large memory usage)\n", sizeMemMatrix);
+    }else{
+        printf("\tMemory: %ld bytes\n", sizeMemMatrix);
+    }	
+
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
-    PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, r);
+    switch (PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, r)) {
+	case 0:
+	    printf("Output: \n");
 
-    printf("Output: \n");
-
-    printf("\n\tK: ");
-    int i;
-    for (i = 0; i < kLen; i++) {
-        printf("%x|", K[i]);
+	    printf("\n\tK: ");
+	    int i;
+	    for (i = 0; i < kLen; i++) {
+		printf("%x|", K[i]);
+	    }
+	    break;
+	case -1:
+	    printf("Error: unable to allocate memory (R too large?)\n");
+	    break;
+	default:
+	    printf("Unexpected error\n");
+	    break;
     }
+
+
     printf("\n");
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
