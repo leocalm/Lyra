@@ -25,10 +25,12 @@
 #include "Sponge.h"
 
 /**
-* Executes Lyra2 based on the G function from Blake2b. The number of columns of the memory matrix is set to nCols = 64.
-* This version supports salts and passwords whose combined length is smaller than the size of the memory matrix,
-* (i.e., (nRows x nCols x b) bits, where "b" is the underlying sponge's bitrate). In this implementation, the "basil" 
- * is composed by all integer parameters in the order they are provided, plus the value of nCols, 
+* Executes Lyra2 based on the G function from Blake2b. The number of columns of 
+ * the memory matrix, nCols, is set at compilation time. This version supports
+ * salts and passwords whose combined length is smaller than the size of the 
+ * memory matrix, (i.e., (nRows x nCols x b) bits, where "b" is the underlying 
+ * sponge's bitrate). In this implementation, the "basil" is composed by all 
+ * integer parameters in the order they are provided, plus the value of nCols, 
  * (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols).
 *
 * @param out The derived key to be output by the algorithm
@@ -43,7 +45,7 @@
 * @return 0 if the key is generated correctly; -1 if there is an error (usually due to lack of memory for allocation)
 */
 int PHS(void *out, size_t outlen, const void *in, size_t inlen, const void *salt, size_t saltlen, unsigned int t_cost, unsigned int m_cost){
-    return LYRA2(out, outlen, in, inlen, salt, saltlen, t_cost, m_cost, N_COLS);
+    return LYRA2(out, outlen, in, inlen, salt, saltlen, t_cost, m_cost);
 }
 
 void print128(__m128i *v){
@@ -65,10 +67,13 @@ void print128(__m128i *v){
     printf("\n");
 }
 /**
-* Executes Lyra2 based on the G function from Blake2b. This version supports salts and passwords
-* whose combined length is smaller than the size of the memory matrix, (i.e., (nRows x nCols x b) bits,
-* where "b" is the underlying sponge's bitrate). In this implementation, the "basil" is composed by all 
- * integer parameters, in the order they are provided (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols).
+* Executes Lyra2 based on the G function from Blake2b. The number of columns of 
+ * the memory matrix, nCols, is set at compilation time. This version supports 
+ * salts and passwords whose combined length is smaller than the size of the 
+ * memory matrix, (i.e., (nRows x nCols x b) bits, where "b" is the underlying 
+ * sponge's bitrate). In this implementation, the "basil" is composed by all 
+ * integer parameters, in the order they are provided 
+ * (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols).
 *
 * @param K The derived key to be output by the algorithm
 * @param kLen Desired key length
@@ -78,29 +83,23 @@ void print128(__m128i *v){
 * @param saltlen Salt length
 * @param timeCost Parameter to determine the processing time (T)
 * @param nRows Number or rows of the memory matrix (R)
-* @param nCols Number of columns of the memory matrix (C)
 *
 * @return 0 if the key is generated correctly; -1 if there is an error (usually due to lack of memory for allocation)
 */
-int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, const unsigned char *salt, int saltlen, int timeCost, int nRows, int nCols) {
-    int rowLenBytes = BLOCK_LEN_INT64 * nCols * 8;
-
-    //Checks whether or not the salt+password are within the accepted limits
-    if (pwdlen + saltlen > rowLenBytes) {
-        return -1;
-    }
+int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, const void *salt, unsigned int saltlen, unsigned int timeCost, unsigned int nRows){
 
     //============================= Basic variables ============================//
-    int row = 2; //index of row to be processed
-    int prev = 1; //index of prev (last row ever computed/modified)
-    int rowa = 0; //index of row* (a previous row, deterministically picked during Setup and randomly picked during Wandering)
-    int tau; //Time Loop iterator
-    int i; //auxiliary iteration counter
+    int64_t row = 2; //index of row to be processed
+    int64_t prev = 1; //index of prev (last row ever computed/modified)
+    int64_t rowa = 0; //index of row* (a previous row, deterministically picked during Setup and randomly picked during Wandering)
+    int64_t tau; //Time Loop iterator
+    int64_t i; //auxiliary iteration counter
     //==========================================================================/
 
     //========== Initializing the Memory Matrix and pointers to it =============//
     //Allocates enough space for the whole memory matrix
-    __m128i *wholeMatrix = malloc(nRows * rowLenBytes);
+    i = (int64_t) ((int64_t)nRows * (int64_t)ROW_LEN_BYTES);
+    __m128i *wholeMatrix = malloc(i);
     if (wholeMatrix == NULL) {
         return -1;
     }
@@ -113,7 +112,7 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     __m128i *ptrWord = wholeMatrix;
     for (i = 0; i < nRows; i++) {
         memMatrix[i] = ptrWord;
-        ptrWord += BLOCK_LEN_INT128 * nCols;
+        ptrWord += ROW_LEN_INT128;
     }
     //==========================================================================/
 
@@ -152,10 +151,11 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     ptrByte += sizeof(int);
     memcpy(ptrByte, &nRows, sizeof(int));
     ptrByte += sizeof(int);
+    int nCols = N_COLS;
     memcpy(ptrByte, &nCols, sizeof(int));
     ptrByte += sizeof(int);
-    
 
+    
     //Now comes the padding
     *ptrByte = 0x80; //first byte of padding: right after the password
     ptrByte = (byte*) wholeMatrix; //resets the pointer to the start of the memory matrix
@@ -167,18 +167,18 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     //====================== Setup Phase =====================//
 
     //Absorbing salt and password
-    ptrWord = memMatrix[0];
+    ptrWord = wholeMatrix;
     for (i = 0; i < nBlocksInput; i++) {
         absorbBlockSSE(state, ptrWord); //absorbs each block of pad(pwd || salt || basil)
         ptrWord += BLOCK_LEN_INT128; //goes to next block of pad(pwd || salt || basil)
     }
     
-    reducedSqueezeRowSSE(state, memMatrix[0], nCols); //The locally copied password is overwritten here
-    reducedSqueezeRowSSE(state, memMatrix[1], nCols);
+    reducedSqueezeRowSSE(state, memMatrix[0]); //The locally copied password is most likely overwritten here
+    reducedSqueezeRowSSE(state, memMatrix[1]);
 
     do {
         //M[row] = rand; //M[row*] = M[row*] XOR rotW(rand)
-        reducedDuplexRowSetupSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
+        reducedDuplexRowSetupSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
         //updates the value of row* (deterministically picked during Setup))
         rowa--;
@@ -204,7 +204,7 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
             rowa = ((unsigned int) (((unsigned int *) state)[0] ^ prev)) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
 
             //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-            reducedDuplexRowSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
+            reducedDuplexRowSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
             //Goes to the next row (inverse order)
             prev = row;
@@ -223,7 +223,7 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
             rowa = ((unsigned int) (((unsigned int *) state)[0] ^ prev)) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
 
             //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-            reducedDuplexRowSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row], nCols);
+            reducedDuplexRowSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
             //Goes to the next row (direct order)
             prev = row;

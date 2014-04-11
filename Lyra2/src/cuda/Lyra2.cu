@@ -109,19 +109,7 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         return -1;
     }
 
-    // CPU state alloc:
-    //Sponge state (initialized to zeros): 16 uint64_t, 8 of them for the bitrate (b) and the remainder 8 for the capacity (c)
-    uint64_t *stateHost = (uint64_t *) malloc(16 * sizeof (uint64_t));
-    if (stateHost == NULL) {
-        printf("Malloc error in file %s, line %d!\n", __FILE__, __LINE__);
-        cudaFree(MemMatrixDev);
-        free(stateHost);
-        MemMatrixDev = NULL;
-        return -1;
-    }
-    memset(stateHost, 0, 16 * sizeof (uint64_t));
-
-    // GPU state alloc:
+     // GPU state alloc:
 	//Sponge state: 16 uint64_t, BLOCK_LEN_INT64 words of them for the bitrate (b) and the remainder for the capacity (c)
     uint64_t *stateDev;
     cudaMalloc((void**) &stateDev, 16 * sizeof (uint64_t));
@@ -130,7 +118,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
-        free(stateHost);
         cudaFree(stateDev);
         stateDev = NULL;
         return -1;
@@ -141,7 +128,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory setting error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -155,7 +141,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory allocation error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -169,7 +154,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory setting error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -187,7 +171,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     uint64_t * MemMatrixHost = (uint64_t*) malloc(ROW_LEN_BYTES);
     if (MemMatrixHost == NULL) {
         printf("Malloc error in file %s, line %d!\n", __FILE__, __LINE__);
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -235,7 +218,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     cudaMemcpy(MemMatrixDev, MemMatrixHost, ROW_LEN_BYTES, cudaMemcpyHostToDevice);
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory copy error in file %s, line %d!\n", __FILE__, __LINE__);
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -262,7 +244,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         if (cudaSuccess != cudaGetLastError()) {
             printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
             printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-            free(stateHost);
             cudaFree(stateDev);
             cudaFree(MemMatrixDev);
             MemMatrixDev = NULL;
@@ -284,7 +265,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -299,7 +279,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -314,7 +293,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory copy error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -331,7 +309,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -353,7 +330,6 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory setting error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
 		free(MemMatrixHost);
         cudaFree(stateDev);
 		cudaFree(rowADev);
@@ -361,12 +337,10 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     }
     cudaFree(stateDev);
     cudaFree(rowADev);
-    free(stateHost);
     free(MemMatrixHost);
     MemMatrixDev = NULL;
     stateDev = NULL;
     rowADev = NULL;
-    stateHost = NULL;
     MemMatrixHost = NULL;
     //========================================================//
 
