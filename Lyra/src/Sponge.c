@@ -96,7 +96,7 @@ static inline void reducedBlake2bLyra(uint64_t *v) {
  * @param len        The number of bytes to be squeezed into the "out" array
  */
 void squeeze(uint64_t *state, byte *out, unsigned int len) {
-    int fullBlocks = len / 64;
+    int fullBlocks = len / BLOCK_LEN_BYTES;
     byte *ptr = out;
     int i;
     //Squeezes full blocks
@@ -107,7 +107,7 @@ void squeeze(uint64_t *state, byte *out, unsigned int len) {
     }
     
     //Squeezes remaining bytes
-    memcpy(ptr, state, (len % 64));
+    memcpy(ptr, state, (len % BLOCK_LEN_BYTES));
 }
 
 /**
@@ -127,6 +127,18 @@ void absorbBlock(uint64_t *state, const uint64_t *in) {
     state[5] ^= in[5];
     state[6] ^= in[6];
     state[7] ^= in[7];
+
+#if (BLOCK_LEN_INT64 == 10)
+    state[8] ^= in[8];
+    state[9] ^= in[9];
+#endif
+    
+#if (BLOCK_LEN_INT64 == 12)
+    state[8] ^= in[8];
+    state[9] ^= in[9];
+    state[10] ^= in[10];
+    state[11] ^= in[11];
+#endif
 
     //Applies the transformation f to the sponge's state
     blake2bLyra(state);
@@ -182,6 +194,18 @@ void reducedAbsorbBlock(uint64_t *state, const uint64_t *in) {
     state[5] ^= in[5];
     state[6] ^= in[6];
     state[7] ^= in[7];
+    
+#if (BLOCK_LEN_INT64 == 10)
+    state[8] ^= in[8];
+    state[9] ^= in[9];
+#endif
+    
+#if (BLOCK_LEN_INT64 == 12)
+    state[8] ^= in[8];
+    state[9] ^= in[9];
+    state[10] ^= in[10];
+    state[11] ^= in[11];
+#endif
 
     reducedBlake2bLyra(state);
 }
@@ -228,6 +252,18 @@ void reducedDuplexRow(uint64_t *state, uint64_t *row) {
         ptr64[6] ^= state[6];
         ptr64[7] ^= state[7];
 
+#if (BLOCK_LEN_INT64 == 10)
+        ptr64[8] ^= state[8];
+        ptr64[9] ^= state[9];
+#endif
+
+#if (BLOCK_LEN_INT64 == 12)
+        ptr64[8] ^= state[8];
+        ptr64[9] ^= state[9];
+        ptr64[10] ^= state[10];
+        ptr64[11] ^= state[11];
+#endif
+
         //Goes to next block
         ptr64 += BLOCK_LEN_INT64;
     }
@@ -261,6 +297,18 @@ void reducedDuplexRowSetup(uint64_t *state, uint64_t *row, uint64_t *oldRow) {
         newPtr64[5] = state[5];
         newPtr64[6] = state[6];
         newPtr64[7] = state[7];
+
+#if (BLOCK_LEN_INT64 == 10)
+        newPtr64[8] = state[8];
+        newPtr64[9] = state[9];
+#endif
+
+#if (BLOCK_LEN_INT64 == 12)
+        newPtr64[8] = state[8];
+        newPtr64[9] = state[9];
+        newPtr64[10] = state[10];
+        newPtr64[11] = state[11];
+#endif
         
         //Goes to next block
         ptr64 += BLOCK_LEN_INT64;

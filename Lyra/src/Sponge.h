@@ -33,6 +33,13 @@
 #define ALIGN
 #endif
 
+#ifndef BLOCK_LEN_INT64
+#define BLOCK_LEN_INT64 8                               //Block lenght: 512 bits (=64 bytes, =8 uint64_t)
+#endif
+
+#define BLOCK_LEN_BYTES (BLOCK_LEN_INT64 * 8)           //Block lenght, in bytes
+
+
 /*Blake 2b IV Array*/
 static const uint64_t blake2b_IV[8] =
 {

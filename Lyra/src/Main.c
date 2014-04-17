@@ -30,9 +30,9 @@
  * Generates the test vectors for Lyra.
  *
  * @param t Parameter to determine the processing time (T)
- * @param r  Memory cost parameter (defines the number of rows of the memory matrix, R)
+ * @param nRows  Memory cost parameter (defines the number of rows of the memory matrix, R)
  */
-int testVectors(unsigned int  t, unsigned int  r) {
+int testVectors(unsigned int  tCost, unsigned int  nRows) {
     //=================== Basic variables, with default values =======================//
     int kLen = 64;
     unsigned char *pwd;
@@ -68,11 +68,11 @@ int testVectors(unsigned int  t, unsigned int  r) {
         if (indexSalt == saltLen)
             indexSalt = 0;
 
-        lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, t, r, N_COLS);
+        lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, tCost, nRows, N_COLS);
 
         printf("\ninlen: %d\n", pwdLen);
-        printf("t_cost: %d\n", t);
-        printf("m_cost: %d\n", r);
+        printf("t_cost: %d\n", tCost);
+        printf("m_cost: %d\n", nRows);
         printf("outlen: %d\n", kLen);
 
         printf("In: ");
@@ -114,11 +114,11 @@ int testVectors(unsigned int  t, unsigned int  r) {
         if (indexSalt == saltLen)
             indexSalt = 0;
 
-        lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, t, r, N_COLS);
+        lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, tCost, nRows, N_COLS);
 
         printf("\ninlen: %d\n", pwdLen);
-        printf("t_cost: %d\n", t);
-        printf("m_cost: %d\n", r);
+        printf("t_cost: %d\n", tCost);
+        printf("m_cost: %d\n", nRows);
         printf("outlen: %d\n", kLen);
 
         printf("In: ");
@@ -145,8 +145,8 @@ int testVectors(unsigned int  t, unsigned int  r) {
 int main(int argc, char *argv[]) {
     //=================== Basic variables, with default values =======================//
     int kLen = 64;
-    int t = 0;
-    int r = 0;
+    int tCost = 0;
+    int nRows = 0;
     char *pwd = "Lyra sponge";
     int pwdLen = 11;
     char *salt = "saltsaltsaltsalt";
@@ -179,14 +179,14 @@ int main(int argc, char *argv[]) {
             salt = argv[2];
             saltLen = strlen(salt);
             kLen = atoi(argv[3]);
-            t = atoi(argv[4]);
-            r = atoi(argv[5]);
+            tCost = atoi(argv[4]);
+            nRows = atoi(argv[5]);
             break;
         case 4:
             if (strcmp(argv[3], "--testVectors") == 0) {
-                t = atoi(argv[1]);
-                r = atoi(argv[2]);
-                testVectors(t, r);
+                tCost = atoi(argv[1]);
+                nRows = atoi(argv[2]);
+                testVectors(tCost, nRows);
                 return 0;
             } else {
                 printf("Invalid options.\nFor more information, try \"Lyra --help\".\n");
@@ -208,14 +208,14 @@ int main(int argc, char *argv[]) {
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     printf("Parameters: \n");
-    printf("\tT: %d\n", t);
-    printf("\tR: %d\n", r);
+    printf("\tT: %d\n", tCost);
+    printf("\tR: %d\n", nRows);
     printf("\tC: %d\n", N_COLS);
-    printf("\tMemory: %ld bits\n", ((long) (N_COLS * r * BLOCK_LEN_BYTES)));
+    printf("\tMemory: %ld bits\n", ((long) (N_COLS * nRows * BLOCK_LEN_BYTES)));
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
 
-    switch (lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, t, r, N_COLS)) {
+    switch (lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, tCost, nRows, N_COLS)) {
 	case 0:
 	    printf("Output: \n");
 

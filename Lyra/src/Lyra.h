@@ -23,10 +23,6 @@
 
 typedef unsigned char byte ;
 
-
-#define BLOCK_LEN_INT64 8                               //Block lenght: 512 bits (=64 bytes, =8 uint64_t)
-#define BLOCK_LEN_BYTES (BLOCK_LEN_INT64 * 8)           //Block lenght, in bytes
-
 #ifndef N_COLS
 #define N_COLS 64                                       //Number of columns in the memory matrix: fixed to 64 by default
 #endif
