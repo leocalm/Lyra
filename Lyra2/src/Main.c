@@ -36,7 +36,7 @@
  * @param t Parameter to determine the processing time (T)
  * @param r  Memory cost parameter (defines the number of rows of the memory matrix, R)
  */
-int testVectors(unsigned int t, unsigned int r) {
+int testVectors(unsigned int t, unsigned int m_cost) {
     //=================== Basic variables, with default values =======================//
     int kLen = 64;
     unsigned char *pwd;
@@ -44,14 +44,7 @@ int testVectors(unsigned int t, unsigned int r) {
     unsigned char *salt;
     int saltLen = 16;
 
-
     srand(time(NULL));
-
-
-
-
-
-
 
     int i;
     int countSample;
@@ -82,14 +75,11 @@ int testVectors(unsigned int t, unsigned int r) {
 			indexSalt = 0;
 
 
-		PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, r);
-
-
-
+		PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, m_cost);
 
 		printf("\ninlen: %d\n", pwdLen);
 		printf("t_cost: %d\n", t);
-		printf("m_cost: %d\n", r);
+		printf("m_cost: %d\n", m_cost);
 		printf("outlen: %d\n", kLen);
 
 
@@ -115,18 +105,6 @@ int testVectors(unsigned int t, unsigned int r) {
 		printf("\n");
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     /* Generating vectors with the input size varying from 0 to 128 bytes,
      * and values varying from 128 to 255. The salt size is fixed in 16 bytes, 
      * and its value varies from 0 to 256.
@@ -149,11 +127,11 @@ int testVectors(unsigned int t, unsigned int r) {
 	if (indexSalt == saltLen)
 	    indexSalt = 0;
 
-	PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, r);
+	PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, m_cost);
 
 	printf("\ninlen: %d\n", pwdLen);
 	printf("t_cost: %d\n", t);
-	printf("m_cost: %d\n", r);
+	printf("m_cost: %d\n", m_cost);
 	printf("outlen: %d\n", kLen);
 
 	printf("In: ");
@@ -181,8 +159,8 @@ int main(int argc, char *argv[]) {
     
     //=================== Basic variables, with default values =======================//
     unsigned int kLen = 64;
-    unsigned int t = 0;
-    unsigned int r = 0;
+    unsigned int t_cost = 0;
+    unsigned int m_cost = 0;
 
 
     char *pwd = "Lyra sponge";
@@ -190,9 +168,6 @@ int main(int argc, char *argv[]) {
     char *salt = "saltsaltsaltsalt";
     unsigned int saltLen = 16;
     //==========================================================================/
-
-
-
 
     switch (argc) {
 	case 2:
@@ -221,14 +196,14 @@ int main(int argc, char *argv[]) {
 	    salt = argv[2];
 	    saltLen = strlen(salt);
 	    kLen = atol(argv[3]);
-	    t = atol(argv[4]);
-	    r = atol(argv[5]);
+	    t_cost = atol(argv[4]);
+	    m_cost = atol(argv[5]);
 	    break;
 	case 4:
 	    if (strcmp(argv[3], "--testVectors") == 0) {
-		t = atoi(argv[1]);
-		r = atoi(argv[2]);
-		testVectors(t, r);
+		t_cost = atoi(argv[1]);
+		m_cost = atoi(argv[2]);
+		testVectors(t_cost, m_cost);
 		return 0;
 	    } else {
 		printf("Invalid options.\nFor more information, try \"Lyra2 --help\".\n");
@@ -241,7 +216,11 @@ int main(int argc, char *argv[]) {
 	    return 0;
     }
 
-
+	if (m_cost < 3) {
+        printf("nRows must be >= 3\n");
+        return 0;
+    }
+    
     unsigned char *K = malloc(kLen);
    
 
@@ -257,12 +236,12 @@ int main(int argc, char *argv[]) {
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
     printf("Parameters: \n");
-    printf("\tT: %u\n", t);
-    printf("\tR: %u\n", r);
+    printf("\tT: %u\n", t_cost);
+    printf("\tR: %u\n", m_cost);
     printf("\tC: %u\n", N_COLS);
-    size_t sizeMemMatrix = (size_t) ((size_t)r * (size_t)ROW_LEN_BYTES);
-           
-    if(sizeMemMatrix > (4294967296-72)){
+    size_t sizeMemMatrix = (size_t) ((size_t)m_cost * (size_t)ROW_LEN_BYTES);
+
+	if(sizeMemMatrix > (1610612736)){
         printf("\tMemory: %ld bytes (IMPORTANT: This implementation is known to have "
                 "issues for such a large memory usage)\n", sizeMemMatrix);
     }else{
@@ -272,7 +251,7 @@ int main(int argc, char *argv[]) {
 
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
-    switch (PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, r)) {
+    switch (PHS(K, kLen, pwd, pwdLen, salt, saltLen, t_cost, m_cost)) {
 	case 0:
 	    printf("Output: \n");
 
@@ -283,24 +262,15 @@ int main(int argc, char *argv[]) {
 	    }
 	    break;
 	case -1:
-	    printf("Error: unable to allocate memory (R too large?)\n");
+	    printf("Error: unable to allocate memory (m_cost too large?)\n");
 	    break;
 	default:
 	    printf("Unexpected error\n");
 	    break;
     }
 
-
-
-
-
-
-
-
     printf("\n");
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
-
-
 
     return 0;
 }

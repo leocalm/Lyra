@@ -39,7 +39,7 @@ typedef unsigned char byte ;
 #define N_COLS 64                                       //Number of columns in the memory matrix: fixed to 64
 #endif
 
-int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, const void *salt, unsigned int saltlen, unsigned int timeCost, unsigned int nRows);
+int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, const void *salt, unsigned int saltlen, unsigned int t_cost, unsigned int m_cost);
 
 int PHS(void *out, size_t outlen, const void *in, size_t inlen, const void *salt, size_t saltlen, unsigned int t_cost, unsigned int m_cost);
 
