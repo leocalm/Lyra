@@ -90,9 +90,9 @@ void squeezeSSE(__m128i *state, unsigned char *out, unsigned int len);
 void absorbBlockSSE(__m128i *state, const __m128i *in);
 void squeezeBlockSSE(__m128i* state, __m128i* block);
 void absorbPaddedSaltSSE(__m128i *state, const unsigned char *salt);
-void reducedSqueezeRowSSE(__m128i* state, __m128i* row, int nCols);
-void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut, int nCols);
-void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut, int nCols);
+void reducedSqueezeRowSSE(__m128i* state, __m128i* row);
+void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
+void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
 
 void printArray(unsigned char *array, unsigned int size, char *name);
 

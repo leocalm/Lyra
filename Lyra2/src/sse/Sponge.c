@@ -112,8 +112,10 @@ void absorbBlockSSE(__m128i *state, const __m128i *in){
     state[1] = _mm_xor_si128(state[1], in[1]);
     state[2] = _mm_xor_si128(state[2], in[2]);
     state[3] = _mm_xor_si128(state[3], in[3]);
+#if(BLOCK_LEN_INT64> 8)
     state[4] = _mm_xor_si128(state[4], in[4]);
     state[5] = _mm_xor_si128(state[5], in[5]);
+#endif
 
     //Applies the transformation f to the sponge's state
     blake2bLyraSSE(state);
@@ -142,10 +144,10 @@ void squeezeBlockSSE(__m128i* state, __m128i* block){
  * @param row       Row to receive the data squeezed
  * @param nCols     Number of Columns
  */
-void reducedSqueezeRowSSE(__m128i* state, __m128i* row, int nCols) {
+void reducedSqueezeRowSSE(__m128i* state, __m128i* row) {
     int i;
     //M[row][col] = H.reduced_squeeze()    
-    for (i = 0; i < nCols; i++) {
+    for (i = 0; i < N_COLS; i++) {
         row[0] = state[0];
         row[1] = state[1];
         row[2] = state[2];
@@ -174,50 +176,50 @@ void reducedSqueezeRowSSE(__m128i* state, __m128i* row, int nCols) {
  * @param nCols          Number of Columns
  *
  */
-void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut, int nCols){
-    __m128i* ptr64In = rowIn; 		//In Lyra2: pointer to prev
-    __m128i* ptr64InOut = rowInOut; 	//In Lyra2: pointer to row*
-    __m128i* ptr64Out = rowOut; 	//In Lyra2: pointer to row
+void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut){
+    __m128i* ptrWordIn = rowIn; 	//In Lyra2: pointer to prev
+    __m128i* ptrWordInOut = rowInOut; 	//In Lyra2: pointer to row*
+    __m128i* ptrWordOut = rowOut; 	//In Lyra2: pointer to row
     int i;
 
-    for (i = 0; i < nCols; i++){
+    for (i = 0; i < N_COLS; i++){
         //Absorbing "M[rowInOut] XOR M[rowIn]"
-        state[0] = _mm_xor_si128(state[0], _mm_xor_si128(ptr64InOut[0], ptr64In[0]));
-        state[1] = _mm_xor_si128(state[1], _mm_xor_si128(ptr64InOut[1], ptr64In[1]));
-        state[2] = _mm_xor_si128(state[2], _mm_xor_si128(ptr64InOut[2], ptr64In[2]));
-        state[3] = _mm_xor_si128(state[3], _mm_xor_si128(ptr64InOut[3], ptr64In[3]));
-	state[4] = _mm_xor_si128(state[4], _mm_xor_si128(ptr64InOut[4], ptr64In[4]));
-        state[5] = _mm_xor_si128(state[5], _mm_xor_si128(ptr64InOut[5], ptr64In[5]));
+        state[0] = _mm_xor_si128(state[0], _mm_xor_si128(ptrWordInOut[0], ptrWordIn[0]));
+        state[1] = _mm_xor_si128(state[1], _mm_xor_si128(ptrWordInOut[1], ptrWordIn[1]));
+        state[2] = _mm_xor_si128(state[2], _mm_xor_si128(ptrWordInOut[2], ptrWordIn[2]));
+        state[3] = _mm_xor_si128(state[3], _mm_xor_si128(ptrWordInOut[3], ptrWordIn[3]));
+	state[4] = _mm_xor_si128(state[4], _mm_xor_si128(ptrWordInOut[4], ptrWordIn[4]));
+        state[5] = _mm_xor_si128(state[5], _mm_xor_si128(ptrWordInOut[5], ptrWordIn[5]));
 
         
         //Applies the reduced-round transformation f to the sponge's state
         reducedBlake2bLyraSSE(state);
 
         //M[rowOut][col] = rand
-        ptr64Out[0] = state[0];
-        ptr64Out[1] = state[1];
-        ptr64Out[2] = state[2];
-        ptr64Out[3] = state[3];
-	ptr64Out[4] = state[4];
-	ptr64Out[5] = state[5];
+        ptrWordOut[0] = state[0];
+        ptrWordOut[1] = state[1];
+        ptrWordOut[2] = state[2];
+        ptrWordOut[3] = state[3];
+	ptrWordOut[4] = state[4];
+	ptrWordOut[5] = state[5];
 
-	((uint64_t *) ptr64InOut)[0] ^= ((uint64_t *) state)[11];
-	((uint64_t *) ptr64InOut)[1] ^= ((uint64_t *) state)[0];
-	((uint64_t *) ptr64InOut)[2] ^= ((uint64_t *) state)[1];
-	((uint64_t *) ptr64InOut)[3] ^= ((uint64_t *) state)[2];
-	((uint64_t *) ptr64InOut)[4] ^= ((uint64_t *) state)[3];
-	((uint64_t *) ptr64InOut)[5] ^= ((uint64_t *) state)[4];
-	((uint64_t *) ptr64InOut)[6] ^= ((uint64_t *) state)[5];
-	((uint64_t *) ptr64InOut)[7] ^= ((uint64_t *) state)[6];
-	((uint64_t *) ptr64InOut)[8] ^= ((uint64_t *) state)[7];
-	((uint64_t *) ptr64InOut)[9] ^= ((uint64_t *) state)[8];
-	((uint64_t *) ptr64InOut)[10] ^= ((uint64_t *) state)[9];
-	((uint64_t *) ptr64InOut)[11] ^= ((uint64_t *) state)[10];
+	((uint64_t *) ptrWordInOut)[0] ^= ((uint64_t *) state)[11];
+	((uint64_t *) ptrWordInOut)[1] ^= ((uint64_t *) state)[0];
+	((uint64_t *) ptrWordInOut)[2] ^= ((uint64_t *) state)[1];
+	((uint64_t *) ptrWordInOut)[3] ^= ((uint64_t *) state)[2];
+	((uint64_t *) ptrWordInOut)[4] ^= ((uint64_t *) state)[3];
+	((uint64_t *) ptrWordInOut)[5] ^= ((uint64_t *) state)[4];
+	((uint64_t *) ptrWordInOut)[6] ^= ((uint64_t *) state)[5];
+	((uint64_t *) ptrWordInOut)[7] ^= ((uint64_t *) state)[6];
+	((uint64_t *) ptrWordInOut)[8] ^= ((uint64_t *) state)[7];
+	((uint64_t *) ptrWordInOut)[9] ^= ((uint64_t *) state)[8];
+	((uint64_t *) ptrWordInOut)[10] ^= ((uint64_t *) state)[9];
+	((uint64_t *) ptrWordInOut)[11] ^= ((uint64_t *) state)[10];
 
 	//Goes to next column (i.e., next block in sequence)
-        ptr64InOut += BLOCK_LEN_INT128;
-        ptr64In += BLOCK_LEN_INT128;
-        ptr64Out += BLOCK_LEN_INT128;
+        ptrWordInOut += BLOCK_LEN_INT128;
+        ptrWordIn += BLOCK_LEN_INT128;
+        ptrWordOut += BLOCK_LEN_INT128;
     }
 }
 
@@ -233,48 +235,48 @@ void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut,
  * @param nCols          Number of Columns
  *
  */
-void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut, int nCols) {
-    __m128i* ptr64InOut = rowInOut;     //pointer to row
-    __m128i* ptr64In = rowIn;           //pointer to row'
-    __m128i* ptr64Out = rowOut;         //pointer to row*
+void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut) {
+    __m128i* ptrWordInOut = rowInOut;     //pointer to row
+    __m128i* ptrWordIn = rowIn;           //pointer to row'
+    __m128i* ptrWordOut = rowOut;         //pointer to row*
     int i;
-    for (i = 0; i < nCols; i++) {
+    for (i = 0; i < N_COLS; i++) {
         //Absorbing "M[rowInOut] XOR M[rowIn]"
-        state[0] = _mm_xor_si128(state[0], _mm_xor_si128(ptr64InOut[0], ptr64In[0]));
-        state[1] = _mm_xor_si128(state[1], _mm_xor_si128(ptr64InOut[1], ptr64In[1]));
-        state[2] = _mm_xor_si128(state[2], _mm_xor_si128(ptr64InOut[2], ptr64In[2]));
-        state[3] = _mm_xor_si128(state[3], _mm_xor_si128(ptr64InOut[3], ptr64In[3]));
-        state[4] = _mm_xor_si128(state[4], _mm_xor_si128(ptr64InOut[4], ptr64In[4]));
-        state[5] = _mm_xor_si128(state[5], _mm_xor_si128(ptr64InOut[5], ptr64In[5]));
+        state[0] = _mm_xor_si128(state[0], _mm_xor_si128(ptrWordInOut[0], ptrWordIn[0]));
+        state[1] = _mm_xor_si128(state[1], _mm_xor_si128(ptrWordInOut[1], ptrWordIn[1]));
+        state[2] = _mm_xor_si128(state[2], _mm_xor_si128(ptrWordInOut[2], ptrWordIn[2]));
+        state[3] = _mm_xor_si128(state[3], _mm_xor_si128(ptrWordInOut[3], ptrWordIn[3]));
+        state[4] = _mm_xor_si128(state[4], _mm_xor_si128(ptrWordInOut[4], ptrWordIn[4]));
+        state[5] = _mm_xor_si128(state[5], _mm_xor_si128(ptrWordInOut[5], ptrWordIn[5]));
 
         //Applies the reduced-round transformation f to the sponge's state
         reducedBlake2bLyraSSE(state);
 
         //M[rowOut][col] = M[rowOut][col] XOR rand
-        ptr64Out[0] = _mm_xor_si128(ptr64Out[0], state[0]);
-        ptr64Out[1] = _mm_xor_si128(ptr64Out[1], state[1]);
-        ptr64Out[2] = _mm_xor_si128(ptr64Out[2], state[2]);
-        ptr64Out[3] = _mm_xor_si128(ptr64Out[3], state[3]);
-        ptr64Out[4] = _mm_xor_si128(ptr64Out[4], state[4]);
-        ptr64Out[5] = _mm_xor_si128(ptr64Out[5], state[5]);
+        ptrWordOut[0] = _mm_xor_si128(ptrWordOut[0], state[0]);
+        ptrWordOut[1] = _mm_xor_si128(ptrWordOut[1], state[1]);
+        ptrWordOut[2] = _mm_xor_si128(ptrWordOut[2], state[2]);
+        ptrWordOut[3] = _mm_xor_si128(ptrWordOut[3], state[3]);
+        ptrWordOut[4] = _mm_xor_si128(ptrWordOut[4], state[4]);
+        ptrWordOut[5] = _mm_xor_si128(ptrWordOut[5], state[5]);
 
-        ((uint64_t *) ptr64InOut)[0] ^= ((uint64_t *) state)[11];
-        ((uint64_t *) ptr64InOut)[1] ^= ((uint64_t *) state)[0];
-        ((uint64_t *) ptr64InOut)[2] ^= ((uint64_t *) state)[1];
-        ((uint64_t *) ptr64InOut)[3] ^= ((uint64_t *) state)[2];
-        ((uint64_t *) ptr64InOut)[4] ^= ((uint64_t *) state)[3];
-        ((uint64_t *) ptr64InOut)[5] ^= ((uint64_t *) state)[4];
-        ((uint64_t *) ptr64InOut)[6] ^= ((uint64_t *) state)[5];
-        ((uint64_t *) ptr64InOut)[7] ^= ((uint64_t *) state)[6];
-        ((uint64_t *) ptr64InOut)[8] ^= ((uint64_t *) state)[7];
-        ((uint64_t *) ptr64InOut)[9] ^= ((uint64_t *) state)[8];
-        ((uint64_t *) ptr64InOut)[10] ^= ((uint64_t *) state)[9];
-        ((uint64_t *) ptr64InOut)[11] ^= ((uint64_t *) state)[10];
+        ((uint64_t *) ptrWordInOut)[0] ^= ((uint64_t *) state)[11];
+        ((uint64_t *) ptrWordInOut)[1] ^= ((uint64_t *) state)[0];
+        ((uint64_t *) ptrWordInOut)[2] ^= ((uint64_t *) state)[1];
+        ((uint64_t *) ptrWordInOut)[3] ^= ((uint64_t *) state)[2];
+        ((uint64_t *) ptrWordInOut)[4] ^= ((uint64_t *) state)[3];
+        ((uint64_t *) ptrWordInOut)[5] ^= ((uint64_t *) state)[4];
+        ((uint64_t *) ptrWordInOut)[6] ^= ((uint64_t *) state)[5];
+        ((uint64_t *) ptrWordInOut)[7] ^= ((uint64_t *) state)[6];
+        ((uint64_t *) ptrWordInOut)[8] ^= ((uint64_t *) state)[7];
+        ((uint64_t *) ptrWordInOut)[9] ^= ((uint64_t *) state)[8];
+        ((uint64_t *) ptrWordInOut)[10] ^= ((uint64_t *) state)[9];
+        ((uint64_t *) ptrWordInOut)[11] ^= ((uint64_t *) state)[10];
 
         //Goes to next block
-        ptr64Out += BLOCK_LEN_INT128;
-        ptr64InOut += BLOCK_LEN_INT128;
-        ptr64In += BLOCK_LEN_INT128;
+        ptrWordOut += BLOCK_LEN_INT128;
+        ptrWordInOut += BLOCK_LEN_INT128;
+        ptrWordIn += BLOCK_LEN_INT128;
     }
 }
 

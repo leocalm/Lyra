@@ -214,17 +214,27 @@ int main(int argc, char *argv[]) {
     printf("\tMemory: %ld bits\n", ((long) (N_COLS * r * BLOCK_LEN_BYTES)));
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 
-    lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, t, r, N_COLS);
 
-    printf("Output: \n");
+    switch (lyra(K, kLen, (unsigned char*) pwd, pwdLen, (unsigned char*) salt, saltLen, t, r, N_COLS)) {
+	case 0:
+	    printf("Output: \n");
 
-    printf("\n\tK: ");
-    int i;
-    for (i = 0; i < kLen; i++) {
-        printf("%x|", K[i]);
+	    printf("\n\tK: ");
+	    int i;
+	    for (i = 0; i < kLen; i++) {
+		printf("%x|", K[i]);
+	    }
+	    break;
+	case -1:
+	    printf("Error: unable to allocate memory (R too large?)\n");
+	    break;
+	default:
+	    printf("Unexpected error\n");
+	    break;
     }
-    printf("\n");
+     printf("\n");
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
+
     return 0;
 }
 

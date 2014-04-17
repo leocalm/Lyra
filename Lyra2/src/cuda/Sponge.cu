@@ -57,7 +57,7 @@ void initState(uint64_t state[/*16*/]){
 /**
  * Execute Blake2b's G function, with all 12 rounds.
  * 
- * @param v     A uint64_t array to be processed by Blake2b's G function
+ * @param v     A 1024-bit (16 uint64_t) array to be processed by Blake2b's G function
  */
 __device__ static void blake2bLyra2(uint64_t *v) {
     ROUND_LYRA(0);
@@ -85,12 +85,11 @@ __global__ static void blake2bLyra(uint64_t *v) {
 
 /**
  * Executes a reduced version of Blake2b's G function with only one round
- * @param v     A uint64_t array to be processed by Blake2b's G function
+ * @param v     A 1024-bit (16 uint64_t) array to be processed by Blake2b's G function
  */
 __device__ static void reducedBlake2bLyra2(uint64_t *v) {
     ROUND_LYRA(0);
 }
-
 
 /**
  * Performs a squeeze operation, using Blake2b's G function as the 
@@ -217,6 +216,7 @@ __device__ void reducedDuplexRowSetup2(uint64_t *state, uint64_t *rowIn, uint64_
     uint64_t* ptr64Out = rowOut; 		//In Lyra2: pointer to row
     int i;
     for (i = 0; i < N_COLS; i++){
+	
          //Absorbing "M[rowInOut] XOR M[rowIn]"
         state[0] ^= ptr64InOut[0] ^ ptr64In[0];
         state[1] ^= ptr64InOut[1] ^ ptr64In[1];
@@ -417,6 +417,7 @@ __global__ void wandering(uint64_t *state, uint64_t *MemMatrix, int timeCost, in
             //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
             reducedDuplexRow2(state, MemMatrixDev_P , MemMatrixDev_A, MemMatrixDev_R);
 
+			//Goes to the next row (inverse order)
             prev = row;
             row = row - 1;            
         } while (row >= 0);

@@ -1,11 +1,8 @@
 /**
  * Implementation of the Lyra2 Password Hashing Scheme (PHS). 
  * Experimental CUDA implementation.
- * 
  * Note: Implemented without shared memory optimizations.
- * 
  * Author: The Lyra PHC team (http://www.lyra-kdf.net/) -- 2014.
- * 
  * This software is hereby placed in the public domain.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ''AS IS'' AND ANY EXPRESS
@@ -26,11 +23,12 @@
 #include "Lyra2.h"
 #include "Sponge.h"
 
-
 /**
- * Executes Lyra2 based on the G function from Blake2b. The number of columns of the memory matrix is set to nCols = 64.
- * This version supports salts and passwords whose combined length is smaller than the size of the memory matrix, 
- * (i.e., (nRows x nCols x b) bits,  where "b" is the underlying sponge's bitrate) 
+  * Executes Lyra2 based on the G function from Blake2b. The number of columns of the memory matrix is set to nCols = 64.
+ * This version supports salts and passwords whose combined length is smaller than the size of the memory matrix,
+ * (i.e., (nRows x nCols x b) bits, where "b" is the underlying sponge's bitrate). In this implementation, the "basil" 
+ * is composed by all integer parameters (treated as type "unsigned int") in the order they are provided, plus the value 
+ * of nCols, (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols).
  * 
  * @param out     The derived key to be output by the algorithm
  * @param outlen  Desired key length
@@ -55,14 +53,17 @@ int PHS(void *out, size_t outlen, const void *in, size_t inlen, const void *salt
 void print64(uint64_t *v){
     int i;
     for (i = 0; i < 16; i++)    {
-        printf("%16lx|",v[i]);
+        printf("%ld|",v[i]);
     }
     printf("\n");
 }
+
 /**
  * Executes Lyra2 based on the G function from Blake2b. This version supports salts and passwords
  * whose combined length is smaller than the size of the memory matrix, (i.e., (nRows x nCols x b) bits, 
- * where "b" is the underlying sponge's bitrate) 
+ * where "b" is the underlying sponge's bitrate). In this implementation, the "basil" is composed by all 
+ * integer parameters (treated as type "unsigned int") in the order they are provided, plus the value 
+ * of nCols, (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols). 
  * 
  * @param K         The derived key to be output by the algorithm
  * @param kLen      Desired key length
@@ -85,8 +86,9 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         return -1;
     }
 
-    // GPU memory matrix alloc:
-    // Memory matrix: nRows of nCols blocks, each block having BLOCK_LEN_INT64 64-bit words
+    //========== Initializing the Memory Matrix and pointers to it =============//
+    
+    //Tries to allocate enough space for the whole memory matrix
     uint64_t *MemMatrixDev;
     cudaMalloc((void***) &MemMatrixDev, nRows * ROW_LEN_BYTES);
     if (cudaSuccess != cudaGetLastError()) {
@@ -94,7 +96,7 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     // Memory matrix cleanup:
@@ -104,22 +106,11 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
-    // CPU state alloc:
-    //Sponge state (initialized to zeros): 16 uint64_t, 8 of them for the bitrate (b) and the remainder 8 for the capacity (c)
-    uint64_t *stateHost = (uint64_t *) malloc(16 * sizeof (uint64_t));
-    if (stateHost == NULL) {
-        printf("Malloc error in file %s, line %d!\n", __FILE__, __LINE__);
-        cudaFree(MemMatrixDev);
-        free(stateHost);
-        MemMatrixDev = NULL;
-        exit(EXIT_FAILURE);
-    }
-    memset(stateHost, 0, 16 * sizeof (uint64_t));
-
-    // GPU state alloc:
+     // GPU state alloc:
+	//Sponge state: 16 uint64_t, BLOCK_LEN_INT64 words of them for the bitrate (b) and the remainder for the capacity (c)
     uint64_t *stateDev;
     cudaMalloc((void**) &stateDev, 16 * sizeof (uint64_t));
     if (cudaSuccess != cudaGetLastError()) {
@@ -127,10 +118,9 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
-        free(stateHost);
         cudaFree(stateDev);
         stateDev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
     
     // GPU state cleanup
@@ -138,12 +128,11 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory setting error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     // GPU rowa alloc:
@@ -152,40 +141,36 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory allocation error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     cudaMemset(rowADev, 0, sizeof (int));
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory setting error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
+    //==========================================================================/
+	
+    //============= Getting the password + salt + basil padded with 10*1 ===============//
 
-
-    //============== Initialing the Sponge State =============//
-    initState(stateDev);
-    //========================================================//
-
-    //============= Getting the password + salt padded with 10*1 ===============//
+    //OBS.:The memory matrix will temporarily hold the password: not for saving memory,
+    //but this ensures that the password copied locally will be overwritten as soon as possible
     uint64_t * MemMatrixHost = (uint64_t*) malloc(ROW_LEN_BYTES);
     if (MemMatrixHost == NULL) {
         printf("Malloc error in file %s, line %d!\n", __FILE__, __LINE__);
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
@@ -193,24 +178,38 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
         cudaFree(rowADev);
         rowADev = NULL;
         free(MemMatrixHost);
-        exit(EXIT_FAILURE);
+        return -1;
     }
     memset(MemMatrixHost, 0, ROW_LEN_BYTES);
-
-    //Prepends the salt to the password    
+    
+	//Computes the number of blocks taken by the salt, password and basil
+    int nBlocksInput = ((saltlen + pwdlen + 6*sizeof(int)) / BLOCK_LEN_BYTES) + 1;
+	
+    //Prepends the password    
     byte *ptrMem = (byte*) MemMatrixHost;
-    memcpy(ptrMem, salt, saltlen);
-
-    //Concatenates the password
-    ptrMem += saltlen;
-    memcpy(ptrMem, pwd, pwdlen);
-
-    //Now comes the padding
+	memcpy(ptrMem, pwd, pwdlen);
+    
+    //Concatenates the salt
     ptrMem += pwdlen;
+    memcpy(ptrMem, salt, saltlen);
+    ptrMem += saltlen;
+	
+    //Concatenates the basil: every integer passed as parameter, in the order they are provided by the interface
+    memcpy(ptrMem, &kLen, sizeof(int));
+    ptrMem += sizeof(int);
+    memcpy(ptrMem, &pwdlen, sizeof(int));
+    ptrMem += sizeof(int);
+    memcpy(ptrMem, &saltlen, sizeof(int));
+    ptrMem += sizeof(int);
+    memcpy(ptrMem, &timeCost, sizeof(int));
+    ptrMem += sizeof(int);
+    memcpy(ptrMem, &nRows, sizeof(int));
+    ptrMem += sizeof(int);
+    memcpy(ptrMem, &nCols, sizeof(int));
+    ptrMem += sizeof(int);	
+	
+    //Now comes the padding
     *ptrMem = 0x80; //first byte of padding: right after the password
-
-    //Computes the number of blocks taken by the salt and password (from 1 to nCols)
-    int nBlocksInput = ((saltlen + pwdlen) / BLOCK_LEN_BYTES) + 1;
     ptrMem = (byte*) (MemMatrixHost);
     ptrMem += nBlocksInput * BLOCK_LEN_BYTES - 1; //sets the pointer to the correct position: end of incomplete block
     *ptrMem ^= 0x01; //last byte of padding: at the end of the last incomplete block
@@ -219,37 +218,41 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     cudaMemcpy(MemMatrixDev, MemMatrixHost, ROW_LEN_BYTES, cudaMemcpyHostToDevice);
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory copy error in file %s, line %d!\n", __FILE__, __LINE__);
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
     //Clean local password 
     memset(MemMatrixHost, 0, ROW_LEN_BYTES);
     //========================================================//
 
+    //============== Initialing the Sponge State =============//
+    initState(stateDev);
+    //========================================================//	
+	
     //====================== Setup Phase =====================//
-    ////Absorbing salt and password
+ 
+
+	//Absorbing salt, password and basil
     uint64_t *ptrWord = MemMatrixDev;
     for (i = 0; i < nBlocksInput; i++) {
-        absorbBlock << <1, 1 >> >(stateDev, ptrWord); //absorbs each block of pad(salt || pwd)
+        absorbBlock << <1, 1 >> >(stateDev, ptrWord); //absorbs each block of pad(pwd || salt || basil)
         if (cudaSuccess != cudaGetLastError()) {
             printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
             printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-            free(stateHost);
             cudaFree(stateDev);
             cudaFree(MemMatrixDev);
             MemMatrixDev = NULL;
             stateDev = NULL;
             cudaFree(rowADev);
             rowADev = NULL;
-            exit(EXIT_FAILURE);
+            return -1;
         }
-        ptrWord = &MemMatrixDev[((i + 1) * BLOCK_LEN_INT64)]; //goes to next block of pad(salt || pwd)
+        ptrWord = &MemMatrixDev[((i + 1) * BLOCK_LEN_INT64)]; //goes to next block of pad(pwd || salt || basil)
     }
     //========================================================//
 
@@ -262,14 +265,13 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     //================== Wandering Phase =====================//
@@ -277,14 +279,13 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     //Recover rowa from GPU
@@ -292,31 +293,29 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA memory copy error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
     //========================================================//
 
     //==================== Wrap-up Phase =====================//
-    //Absorbs
+    //Absorbs the last block of the memory matrix
     absorbBlock << <1, 1 >> >(stateDev, &MemMatrixDev[(rowaCPU * ROW_LEN_INT64)]);
     if (cudaSuccess != cudaGetLastError()) {
         printf("CUDA kernel call error in file %s, line %d!\n", __FILE__, __LINE__);
         printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
-        free(stateHost);
         cudaFree(stateDev);
         cudaFree(MemMatrixDev);
         MemMatrixDev = NULL;
         stateDev = NULL;
         cudaFree(rowADev);
         rowADev = NULL;
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
 
@@ -326,14 +325,22 @@ int LYRA2(unsigned char *K, int kLen, const unsigned char *pwd, int pwdlen, cons
 
     //=============== Freeing the memory =====================//
     cudaFree(MemMatrixDev);
+	//Wiping out the sponge's internal state before freeing it
+	cudaMemset(stateDev, 0, 16 * sizeof (uint64_t));
+    if (cudaSuccess != cudaGetLastError()) {
+        printf("CUDA memory setting error in file %s, line %d!\n", __FILE__, __LINE__);
+        printf("Error: %s \n", cudaGetErrorString(cudaGetLastError()));
+		free(MemMatrixHost);
+        cudaFree(stateDev);
+		cudaFree(rowADev);
+        return -1;
+    }
     cudaFree(stateDev);
     cudaFree(rowADev);
-    free(stateHost);
     free(MemMatrixHost);
     MemMatrixDev = NULL;
     stateDev = NULL;
     rowADev = NULL;
-    stateHost = NULL;
     MemMatrixHost = NULL;
     //========================================================//
 

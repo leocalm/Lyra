@@ -120,7 +120,6 @@ inline void absorbBlock(uint64_t *state, const uint64_t *in) {
     state[9] ^= in[9];
     state[10] ^= in[10];
     state[11] ^= in[11];
-    //printArray(state, 128, "state");
 
     //Applies the transformation f to the sponge's state
     blake2bLyra(state);
@@ -135,7 +134,7 @@ inline void absorbBlock(uint64_t *state, const uint64_t *in) {
  */
 inline void reducedSqueezeRow(uint64_t* state, uint64_t* row) {
     int i;
-    //M[row][col] = H.reduced_squeeze()
+    //M[row][col] = H.reduced_squeeze()    
     for (i = 0; i < N_COLS; i++) {
         row[0] = state[0];
         row[1] = state[1];
@@ -170,61 +169,62 @@ inline void reducedSqueezeRow(uint64_t* state, uint64_t* row) {
  *
  */
 inline void reducedDuplexRowSetup(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut) {
-    uint64_t* ptr64In = rowIn; 		//In Lyra2: pointer to prev
-    uint64_t* ptr64InOut = rowInOut; 	//In Lyra2: pointer to row*
-    uint64_t* ptr64Out = rowOut; 	//In Lyra2: pointer to row
+    uint64_t* ptrWordIn = rowIn; 		//In Lyra2: pointer to prev
+    uint64_t* ptrWordInOut = rowInOut; 	//In Lyra2: pointer to row*
+    uint64_t* ptrWordOut = rowOut; 	//In Lyra2: pointer to row
     int i; 
     for (i = 0; i < N_COLS; i++) {
+        
         //Absorbing "M[rowInOut] XOR M[rowIn]"
-        state[0] ^= ptr64InOut[0] ^ ptr64In[0];
-        state[1] ^= ptr64InOut[1] ^ ptr64In[1];
-        state[2] ^= ptr64InOut[2] ^ ptr64In[2];
-        state[3] ^= ptr64InOut[3] ^ ptr64In[3];
-        state[4] ^= ptr64InOut[4] ^ ptr64In[4];
-        state[5] ^= ptr64InOut[5] ^ ptr64In[5];
-        state[6] ^= ptr64InOut[6] ^ ptr64In[6];
-        state[7] ^= ptr64InOut[7] ^ ptr64In[7];
-        state[8] ^= ptr64InOut[8] ^ ptr64In[8];
-        state[9] ^= ptr64InOut[9] ^ ptr64In[9];
-        state[10] ^= ptr64InOut[10] ^ ptr64In[10];
-        state[11] ^= ptr64InOut[11] ^ ptr64In[11];
+        state[0] ^= ptrWordInOut[0] ^ ptrWordIn[0];
+        state[1] ^= ptrWordInOut[1] ^ ptrWordIn[1];
+        state[2] ^= ptrWordInOut[2] ^ ptrWordIn[2];
+        state[3] ^= ptrWordInOut[3] ^ ptrWordIn[3];
+        state[4] ^= ptrWordInOut[4] ^ ptrWordIn[4];
+        state[5] ^= ptrWordInOut[5] ^ ptrWordIn[5];
+        state[6] ^= ptrWordInOut[6] ^ ptrWordIn[6];
+        state[7] ^= ptrWordInOut[7] ^ ptrWordIn[7];
+        state[8] ^= ptrWordInOut[8] ^ ptrWordIn[8];
+        state[9] ^= ptrWordInOut[9] ^ ptrWordIn[9];
+        state[10] ^= ptrWordInOut[10] ^ ptrWordIn[10];
+        state[11] ^= ptrWordInOut[11] ^ ptrWordIn[11];
         
         //Applies the reduced-round transformation f to the sponge's state
         reducedBlake2bLyra(state);
 
         //M[rowOut][col] = rand
-        ptr64Out[0] = state[0];
-        ptr64Out[1] = state[1];
-        ptr64Out[2] = state[2];
-        ptr64Out[3] = state[3];
-        ptr64Out[4] = state[4];
-        ptr64Out[5] = state[5];
-        ptr64Out[6] = state[6];
-        ptr64Out[7] = state[7];
-        ptr64Out[8] = state[8];
-        ptr64Out[9] = state[9];
-        ptr64Out[10] = state[10];
-        ptr64Out[11] = state[11];
+        ptrWordOut[0] = state[0];
+        ptrWordOut[1] = state[1];
+        ptrWordOut[2] = state[2];
+        ptrWordOut[3] = state[3];
+        ptrWordOut[4] = state[4];
+        ptrWordOut[5] = state[5];
+        ptrWordOut[6] = state[6];
+        ptrWordOut[7] = state[7];
+        ptrWordOut[8] = state[8];
+        ptrWordOut[9] = state[9];
+        ptrWordOut[10] = state[10];
+        ptrWordOut[11] = state[11];
 
 
         //M[rowInOut][col] = M[rowInOut][col] XOR rotW(rand)
-        ptr64InOut[0] ^= state[11];
-        ptr64InOut[1] ^= state[0];
-        ptr64InOut[2] ^= state[1];
-        ptr64InOut[3] ^= state[2];
-        ptr64InOut[4] ^= state[3];
-        ptr64InOut[5] ^= state[4];
-        ptr64InOut[6] ^= state[5];
-        ptr64InOut[7] ^= state[6];
-        ptr64InOut[8] ^= state[7];
-        ptr64InOut[9] ^= state[8];
-        ptr64InOut[10] ^= state[9];
-        ptr64InOut[11] ^= state[10];
+        ptrWordInOut[0] ^= state[11];
+        ptrWordInOut[1] ^= state[0];
+        ptrWordInOut[2] ^= state[1];
+        ptrWordInOut[3] ^= state[2];
+        ptrWordInOut[4] ^= state[3];
+        ptrWordInOut[5] ^= state[4];
+        ptrWordInOut[6] ^= state[5];
+        ptrWordInOut[7] ^= state[6];
+        ptrWordInOut[8] ^= state[7];
+        ptrWordInOut[9] ^= state[8];
+        ptrWordInOut[10] ^= state[9];
+        ptrWordInOut[11] ^= state[10];
 
         //Goes to next column (i.e., next block in sequence)
-        ptr64InOut += BLOCK_LEN_INT64;
-        ptr64In += BLOCK_LEN_INT64;
-        ptr64Out += BLOCK_LEN_INT64;
+        ptrWordInOut += BLOCK_LEN_INT64;
+        ptrWordIn += BLOCK_LEN_INT64;
+        ptrWordOut += BLOCK_LEN_INT64;
     }
 }
 
@@ -240,61 +240,61 @@ inline void reducedDuplexRowSetup(uint64_t *state, uint64_t *rowIn, uint64_t *ro
  *
  */
 inline void reducedDuplexRow(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut) {
-    uint64_t* ptr64InOut = rowInOut; 	//In Lyra2: pointer to row*
-    uint64_t* ptr64In = rowIn;          //In Lyra2: pointer to prev
-    uint64_t* ptr64Out = rowOut; 	//In Lyra2: pointer to row
+    uint64_t* ptrWordInOut = rowInOut; 	//In Lyra2: pointer to row*
+    uint64_t* ptrWordIn = rowIn;          //In Lyra2: pointer to prev
+    uint64_t* ptrWordOut = rowOut; 	//In Lyra2: pointer to row
     int i;
     for (i = 0; i < N_COLS; i++) {
 	
 	//Absorbing "M[rowInOut] XOR M[rowIn]"
-        state[0] ^= ptr64InOut[0] ^ ptr64In[0];
-        state[1] ^= ptr64InOut[1] ^ ptr64In[1];
-        state[2] ^= ptr64InOut[2] ^ ptr64In[2];
-        state[3] ^= ptr64InOut[3] ^ ptr64In[3];
-        state[4] ^= ptr64InOut[4] ^ ptr64In[4];
-        state[5] ^= ptr64InOut[5] ^ ptr64In[5];
-        state[6] ^= ptr64InOut[6] ^ ptr64In[6];
-        state[7] ^= ptr64InOut[7] ^ ptr64In[7];
-        state[8] ^= ptr64InOut[8] ^ ptr64In[8];
-        state[9] ^= ptr64InOut[9] ^ ptr64In[9];
-        state[10] ^= ptr64InOut[10] ^ ptr64In[10];
-        state[11] ^= ptr64InOut[11] ^ ptr64In[11];
+        state[0] ^= ptrWordInOut[0] ^ ptrWordIn[0];
+        state[1] ^= ptrWordInOut[1] ^ ptrWordIn[1];
+        state[2] ^= ptrWordInOut[2] ^ ptrWordIn[2];
+        state[3] ^= ptrWordInOut[3] ^ ptrWordIn[3];
+        state[4] ^= ptrWordInOut[4] ^ ptrWordIn[4];
+        state[5] ^= ptrWordInOut[5] ^ ptrWordIn[5];
+        state[6] ^= ptrWordInOut[6] ^ ptrWordIn[6];
+        state[7] ^= ptrWordInOut[7] ^ ptrWordIn[7];
+        state[8] ^= ptrWordInOut[8] ^ ptrWordIn[8];
+        state[9] ^= ptrWordInOut[9] ^ ptrWordIn[9];
+        state[10] ^= ptrWordInOut[10] ^ ptrWordIn[10];
+        state[11] ^= ptrWordInOut[11] ^ ptrWordIn[11];
         
         //Applies the reduced-round transformation f to the sponge's state
         reducedBlake2bLyra(state);
 
 	//M[rowOut][col] = M[rowOut][col] XOR rand
-        ptr64Out[0] ^= state[0];
-        ptr64Out[1] ^= state[1];
-        ptr64Out[2] ^= state[2];
-        ptr64Out[3] ^= state[3];
-        ptr64Out[4] ^= state[4];
-        ptr64Out[5] ^= state[5];
-        ptr64Out[6] ^= state[6];
-        ptr64Out[7] ^= state[7];
-        ptr64Out[8] ^= state[8];
-        ptr64Out[9] ^= state[9];
-        ptr64Out[10] ^= state[10];
-        ptr64Out[11] ^= state[11];
+        ptrWordOut[0] ^= state[0];
+        ptrWordOut[1] ^= state[1];
+        ptrWordOut[2] ^= state[2];
+        ptrWordOut[3] ^= state[3];
+        ptrWordOut[4] ^= state[4];
+        ptrWordOut[5] ^= state[5];
+        ptrWordOut[6] ^= state[6];
+        ptrWordOut[7] ^= state[7];
+        ptrWordOut[8] ^= state[8];
+        ptrWordOut[9] ^= state[9];
+        ptrWordOut[10] ^= state[10];
+        ptrWordOut[11] ^= state[11];
 
 	//M[rowInOut][col] = M[rowInOut][col] XOR rotW(rand)
-        ptr64InOut[0] ^= state[11];
-        ptr64InOut[1] ^= state[0];
-        ptr64InOut[2] ^= state[1];
-        ptr64InOut[3] ^= state[2];
-        ptr64InOut[4] ^= state[3];
-        ptr64InOut[5] ^= state[4];
-        ptr64InOut[6] ^= state[5];
-        ptr64InOut[7] ^= state[6];
-        ptr64InOut[8] ^= state[7];
-        ptr64InOut[9] ^= state[8];
-        ptr64InOut[10] ^= state[9];
-        ptr64InOut[11] ^= state[10];
+        ptrWordInOut[0] ^= state[11];
+        ptrWordInOut[1] ^= state[0];
+        ptrWordInOut[2] ^= state[1];
+        ptrWordInOut[3] ^= state[2];
+        ptrWordInOut[4] ^= state[3];
+        ptrWordInOut[5] ^= state[4];
+        ptrWordInOut[6] ^= state[5];
+        ptrWordInOut[7] ^= state[6];
+        ptrWordInOut[8] ^= state[7];
+        ptrWordInOut[9] ^= state[8];
+        ptrWordInOut[10] ^= state[9];
+        ptrWordInOut[11] ^= state[10];
 
         //Goes to next block
-        ptr64Out += BLOCK_LEN_INT64;
-        ptr64InOut += BLOCK_LEN_INT64;
-        ptr64In += BLOCK_LEN_INT64;
+        ptrWordOut += BLOCK_LEN_INT64;
+        ptrWordInOut += BLOCK_LEN_INT64;
+        ptrWordIn += BLOCK_LEN_INT64;
     }
 }
 
