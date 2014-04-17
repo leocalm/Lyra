@@ -84,7 +84,13 @@ static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
  * 
  * @param state         The 1024-bit array to be initialized
  */
-void initStateSSE(__m128i state[/*8*/]);
+static inline void initStateSSE(__m128i state[/*8*/]){
+    memset(state, 0, 64); //first 512 bits are zeros
+    state[4] = _mm_load_si128((__m128i *) &blake2b_IV[0]);
+    state[5] = _mm_load_si128((__m128i *) &blake2b_IV[2]);
+    state[6] = _mm_load_si128((__m128i *) &blake2b_IV[4]);
+    state[7] = _mm_load_si128((__m128i *) &blake2b_IV[6]);
+}
 
 void squeezeSSE(__m128i *state, unsigned char *out, unsigned int len);
 void absorbBlockSSE(__m128i *state, const __m128i *in);

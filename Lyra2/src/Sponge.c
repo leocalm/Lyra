@@ -26,29 +26,6 @@
 
 
 /**
- * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
- * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges
- * typically have their internal state initialized with zeros, Blake2b's G function
- * has a fixed point: if the internal state and message are both filled with zeros. the 
- * resulting permutation will always be a block filled with zeros; this happens because 
- * Blake2b does not use the constants originally employed in Blake2 inside its G function, 
- * relying on the IV for avoiding possible fixed points.
- * 
- * @param state         The 1024-bit array to be initialized
- */
-inline void initState(uint64_t state[/*16*/]) {
-    memset(state, 0, 64); //first 512 bis are zeros
-    state[8] = blake2b_IV[0];
-    state[9] = blake2b_IV[1];
-    state[10] = blake2b_IV[2];
-    state[11] = blake2b_IV[3];
-    state[12] = blake2b_IV[4];
-    state[13] = blake2b_IV[5];
-    state[14] = blake2b_IV[6];
-    state[15] = blake2b_IV[7];
-}
-
-/**
  * Execute Blake2b's G function, with all 12 rounds.
  * 
  * @param v     A 1024-bit (16 uint64_t) array to be processed by Blake2b's G function

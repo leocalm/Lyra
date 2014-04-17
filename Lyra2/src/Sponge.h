@@ -84,7 +84,17 @@ static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
  * 
  * @param state         The 1024-bit array to be initialized
  */
-void initState(uint64_t state[/*16*/]);
+static inline void initState(uint64_t state[/*16*/]) {
+    memset(state, 0, 64); //first 512 bis are zeros
+    state[8] = blake2b_IV[0];
+    state[9] = blake2b_IV[1];
+    state[10] = blake2b_IV[2];
+    state[11] = blake2b_IV[3];
+    state[12] = blake2b_IV[4];
+    state[13] = blake2b_IV[5];
+    state[14] = blake2b_IV[6];
+    state[15] = blake2b_IV[7];
+}
 
 
 void squeeze(uint64_t *state, unsigned char *out, unsigned int len);

@@ -28,25 +28,6 @@
 
 
 /**
- * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
- * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges
- * typically have their internal state initialized with zeros, Blake2b's G function
- * has a fixed point: if the internal state and message are both filled with zeros. the 
- * resulting permutation will always be a block filled with zeros; this happens because 
- * Blake2b does not use the constants originally employed in Blake2 inside its G function, 
- * relying on the IV for avoiding possible fixed points.
- * 
- * @param state         The 1024-bit array to be initialized
- */
-void inline initStateSSE(__m128i state[/*8*/]){
-    memset(state, 0, 64); //first 512 bis are zeros
-    state[4] = _mm_load_si128((__m128i *) &blake2b_IV[0]);
-    state[5] = _mm_load_si128((__m128i *) &blake2b_IV[2]);
-    state[6] = _mm_load_si128((__m128i *) &blake2b_IV[4]);
-    state[7] = _mm_load_si128((__m128i *) &blake2b_IV[6]);
-}
-
-/**
  * Execute Blake2b's G function, with all 12 rounds.
  * 
  * @param v     A 1024-bit (16 uint64_t) array to be processed by Blake2b's G function
@@ -87,7 +68,7 @@ static inline void reducedBlake2bLyraSSE(__m128i *v){
  * @param len        The number of bytes to be squeezed into the "out" array
  */
 void squeezeSSE(__m128i *state, byte *out, unsigned int len) {
-    int fullBlocks = len / 64;
+    int fullBlocks = len / BLOCK_LEN_BYTES;
     byte *ptr = out;
     int i;
     //Squeezes full blocks
@@ -97,7 +78,7 @@ void squeezeSSE(__m128i *state, byte *out, unsigned int len) {
 
         ptr += BLOCK_LEN_BYTES;
     }
-    memcpy(ptr, state, (len % 64));
+    memcpy(ptr, state, (len % BLOCK_LEN_BYTES));
 }
 
 /**
