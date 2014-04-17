@@ -34,8 +34,9 @@ default:
 	@echo "windows-x86-64                      Windows x86-64, Cygwin"
 	@echo "win-cygwin-x86-64-sse2              Windows x86-64, Cygwin, with SSE2 (beta version, needs improvement)"
 	@echo " "
-	@echo "Note:"
+	@echo "Notes:"
 	@echo "Lyra2 was tested with nCols=16, nCols=32, nCols=64, nCols=96, and nCols=128 "
+	@echo "This implementation is known to have issues for large memory usage. The maximum tested memory usage was 1.6 GB "
 	@echo " "
 
 
@@ -70,6 +71,6 @@ win-cygwin-x86-64-sse2:	$(SSEDIR)Lyra2.c $(SSEDIR)Sponge.c Main.c $(SSEDIR)Lyra2
 	@echo "Build completed, binaries in $(BIN)"
 	
 clean:
-	rm -rf *.o $(BIN) $(BINCUDA)
+	rm -rf *.o $(BIN) $(BINCUDA) $(BINDIR)
 
 
