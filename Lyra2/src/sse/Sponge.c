@@ -28,11 +28,30 @@
 
 
 /**
+ * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
+ * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges
+ * typically have their internal state initialized with zeros, Blake2b's G function
+ * has a fixed point: if the internal state and message are both filled with zeros. the 
+ * resulting permutation will always be a block filled with zeros; this happens because 
+ * Blake2b does not use the constants originally employed in Blake2 inside its G function, 
+ * relying on the IV for avoiding possible fixed points.
+ * 
+ * @param state         The 1024-bit array to be initialized
+ */
+inline void initState(__m128i state[/*8*/]){
+    memset(state, 0, 64); //first 512 bits are zeros
+    state[4] = _mm_load_si128((__m128i *) &blake2b_IV[0]);
+    state[5] = _mm_load_si128((__m128i *) &blake2b_IV[2]);
+    state[6] = _mm_load_si128((__m128i *) &blake2b_IV[4]);
+    state[7] = _mm_load_si128((__m128i *) &blake2b_IV[6]);
+}
+
+/**
  * Execute Blake2b's G function, with all 12 rounds.
  * 
  * @param v     A 1024-bit (16 uint64_t) array to be processed by Blake2b's G function
  */
-static inline void blake2bLyraSSE(__m128i *v){
+static inline void blake2bLyra(__m128i *v){
     __m128i t0, t1;
 
     ROUND(0);
@@ -53,7 +72,7 @@ static inline void blake2bLyraSSE(__m128i *v){
  * Executes a reduced version of Blake2b's G function with only one round
  * @param v     A 1024-bit (16 uint64_t) array to be processed by Blake2b's G function
  */
-static inline void reducedBlake2bLyraSSE(__m128i *v){
+static inline void reducedBlake2bLyra(__m128i *v){
     __m128i t0, t1;
 
     ROUND(0);    
@@ -67,14 +86,14 @@ static inline void reducedBlake2bLyraSSE(__m128i *v){
  * @param out        Array that will receive the data squeezed
  * @param len        The number of bytes to be squeezed into the "out" array
  */
-void squeezeSSE(__m128i *state, byte *out, unsigned int len) {
+void squeeze(__m128i *state, byte *out, unsigned int len) {
     int fullBlocks = len / BLOCK_LEN_BYTES;
     byte *ptr = out;
     int i;
     //Squeezes full blocks
     for (i = 0; i < fullBlocks; i++) {
         memcpy(ptr, state, BLOCK_LEN_BYTES);
-        blake2bLyraSSE(state);
+        blake2bLyra(state);
 
         ptr += BLOCK_LEN_BYTES;
     }
@@ -88,60 +107,104 @@ void squeezeSSE(__m128i *state, byte *out, unsigned int len) {
  * @param state The current state of the sponge 
  * @param in    The block to be absorbed 
  */
-void absorbBlockSSE(__m128i *state, const __m128i *in){
+void absorbBlock(__m128i *state, const __m128i *in){
     state[0] = _mm_xor_si128(state[0], in[0]);
     state[1] = _mm_xor_si128(state[1], in[1]);
     state[2] = _mm_xor_si128(state[2], in[2]);
     state[3] = _mm_xor_si128(state[3], in[3]);
-#if(BLOCK_LEN_INT64> 8)
     state[4] = _mm_xor_si128(state[4], in[4]);
     state[5] = _mm_xor_si128(state[5], in[5]);
-#endif
 
     //Applies the transformation f to the sponge's state
-    blake2bLyraSSE(state);
+    blake2bLyra(state);
 }
 
+/**
+ * Performs an absorb operation for a single block (BLOCK_LEN_BLAKE2_SAFE_INT64 
+ * words of type uint64_t), using Blake2b's G function as the internal permutation
+ * 
+ * @param state The current state of the sponge 
+ * @param in    The block to be absorbed (BLOCK_LEN_BLAKE2_SAFE_INT64 words)
+ */
+inline void absorbBlockBlake2Safe(__m128i *state, const __m128i *in) {
+    //XORs the first BLOCK_LEN_BLAKE2_SAFE_INT64 words of "in" with the current state
+    state[0] = _mm_xor_si128(state[0], in[0]);
+    state[1] = _mm_xor_si128(state[1], in[1]);
+    state[2] = _mm_xor_si128(state[2], in[2]);
+    state[3] = _mm_xor_si128(state[3], in[3]);
 
-void absorbPaddedSaltSSE(__m128i *state, const unsigned char *salt) {
-    //XORs the first BLOCK_LEN_INT64 words of "in" with the current state
-    state[0] = _mm_xor_si128(state[0], _mm_set_epi8(salt[15],salt[14],salt[13],salt[12],salt[11],salt[10],salt[9],salt[8],salt[7],salt[6],salt[5],salt[4],salt[3],salt[2],salt[1],salt[0]));
-    state[1] = _mm_xor_si128(state[1], _mm_set_epi64x(0, 0x80));
-    state[3] = _mm_xor_si128(state[3], _mm_set_epi64x(0x0100000000000000ULL, 0));
-    blake2bLyraSSE(state);
-}
-
-
-void squeezeBlockSSE(__m128i* state, __m128i* block){
-    memcpy(block, state, BLOCK_LEN_BYTES);
-    blake2bLyraSSE(state);
+    //Applies the transformation f to the sponge's state
+    blake2bLyra(state);
 }
 
 /** 
- * Performs a squeeze operation for two rows in sequence, using 
- * reduced Blake2b's G function as the internal permutation
+ * Performs a reduced squeeze operation for a single row, from the highest to 
+ * the lowest index, using the reduced-round Blake2b's G function as the 
+ * internal permutation
  * 
  * @param state     The current state of the sponge 
- * @param row       Row to receive the data squeezed
- * @param nCols     Number of Columns
+ * @param rowOut    Row to receive the data squeezed
  */
-void reducedSqueezeRowSSE(__m128i* state, __m128i* row) {
+inline void reducedSqueezeRow0(__m128i* state, __m128i* rowOut) {
+    __m128i* ptrWord = rowOut + (N_COLS-1)*BLOCK_LEN_INT128; //In Lyra2: pointer to M[0][C-1]
     int i;
-    //M[row][col] = H.reduced_squeeze()    
+    //M[row][C-1-col] = H.reduced_squeeze()    
     for (i = 0; i < N_COLS; i++) {
-        row[0] = state[0];
-        row[1] = state[1];
-        row[2] = state[2];
-        row[3] = state[3];
-        row[4] = state[4];
-        row[5] = state[5];
-        row[6] = state[6];
+	ptrWord[0] = state[0];
+        ptrWord[1] = state[1];
+        ptrWord[2] = state[2];
+        ptrWord[3] = state[3];
+        ptrWord[4] = state[4];
+        ptrWord[5] = state[5];
 
         //Goes to next block (column) that will receive the squeezed data
-        row += BLOCK_LEN_INT128;
+        ptrWord -= BLOCK_LEN_INT128;
 
         //Applies the reduced-round transformation f to the sponge's state
-        reducedBlake2bLyraSSE(state);
+        reducedBlake2bLyra(state);
+    }
+}
+
+
+/** 
+ * Performs a reduced duplex operation for a single row, from the highest to 
+ * the lowest index, using the reduced-round Blake2b's G function as the 
+ * internal permutation
+ * 
+ * @param state		The current state of the sponge 
+ * @param rowIn		Row to feed the sponge
+ * @param rowOut	Row to receive the sponge's output
+ */
+inline void reducedDuplexRow1(__m128i *state, __m128i *rowIn, __m128i *rowOut) {
+    __m128i* ptrWordIn = rowIn;				//In Lyra2: pointer to prev
+    __m128i* ptrWordOut = rowOut + (N_COLS-1)*BLOCK_LEN_INT128; //In Lyra2: pointer to row
+    int i;
+
+    for (i = 0; i < N_COLS; i++) {
+
+	//Absorbing "M[prev][col]"
+	state[0] = _mm_xor_si128(state[0], ptrWordIn[0]);
+	state[1] = _mm_xor_si128(state[1], ptrWordIn[1]);
+	state[2] = _mm_xor_si128(state[2], ptrWordIn[2]);
+	state[3] = _mm_xor_si128(state[3], ptrWordIn[3]);
+	state[4] = _mm_xor_si128(state[4], ptrWordIn[4]);
+	state[5] = _mm_xor_si128(state[5], ptrWordIn[5]);
+
+	//Applies the reduced-round transformation f to the sponge's state
+	reducedBlake2bLyra(state);
+
+	//M[row][C-1-col] = M[prev][col] XOR rand
+	ptrWordOut[0] = _mm_xor_si128(state[0], ptrWordIn[0]);
+	ptrWordOut[1] = _mm_xor_si128(state[1], ptrWordIn[1]);
+	ptrWordOut[2] = _mm_xor_si128(state[2], ptrWordIn[2]);
+	ptrWordOut[3] = _mm_xor_si128(state[3], ptrWordIn[3]);
+	ptrWordOut[4] = _mm_xor_si128(state[4], ptrWordIn[4]);
+	ptrWordOut[5] = _mm_xor_si128(state[5], ptrWordIn[5]);	
+
+	//Input: next column (i.e., next block in sequence)
+	ptrWordIn += BLOCK_LEN_INT128;
+	//Output: goes to previous column
+	ptrWordOut -= BLOCK_LEN_INT128;
     }
 }
 
@@ -157,50 +220,43 @@ void reducedSqueezeRowSSE(__m128i* state, __m128i* row) {
  * @param nCols          Number of Columns
  *
  */
-void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut){
+inline void reducedDuplexRowSetup(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut){
     __m128i* ptrWordIn = rowIn; 	//In Lyra2: pointer to prev
     __m128i* ptrWordInOut = rowInOut; 	//In Lyra2: pointer to row*
-    __m128i* ptrWordOut = rowOut; 	//In Lyra2: pointer to row
+    __m128i* ptrWordOut = rowOut + (N_COLS-1)*BLOCK_LEN_INT128;	//In Lyra2: pointer to row
     int i;
-
+     
     for (i = 0; i < N_COLS; i++){
-        //Absorbing "M[rowInOut] XOR M[rowIn]"
-        state[0] = _mm_xor_si128(state[0], _mm_xor_si128(ptrWordInOut[0], ptrWordIn[0]));
-        state[1] = _mm_xor_si128(state[1], _mm_xor_si128(ptrWordInOut[1], ptrWordIn[1]));
-        state[2] = _mm_xor_si128(state[2], _mm_xor_si128(ptrWordInOut[2], ptrWordIn[2]));
-        state[3] = _mm_xor_si128(state[3], _mm_xor_si128(ptrWordInOut[3], ptrWordIn[3]));
-	state[4] = _mm_xor_si128(state[4], _mm_xor_si128(ptrWordInOut[4], ptrWordIn[4]));
-        state[5] = _mm_xor_si128(state[5], _mm_xor_si128(ptrWordInOut[5], ptrWordIn[5]));
-
-        
+        //Absorbing "M[prev] [+] M[row*]"
+	state[0] = _mm_xor_si128(state[0], ptrWordIn[0]  + ptrWordInOut[0]);
+	state[1] = _mm_xor_si128(state[1], ptrWordIn[1]  + ptrWordInOut[1]);
+	state[2] = _mm_xor_si128(state[2], ptrWordIn[2]  + ptrWordInOut[2]);
+	state[3] = _mm_xor_si128(state[3], ptrWordIn[3]  + ptrWordInOut[3]);
+	state[4] = _mm_xor_si128(state[4], ptrWordIn[4]  + ptrWordInOut[4]);
+	state[5] = _mm_xor_si128(state[5], ptrWordIn[5]  + ptrWordInOut[5]);
+     
         //Applies the reduced-round transformation f to the sponge's state
-        reducedBlake2bLyraSSE(state);
+        reducedBlake2bLyra(state);
 
-        //M[rowOut][col] = rand
-        ptrWordOut[0] = state[0];
-        ptrWordOut[1] = state[1];
-        ptrWordOut[2] = state[2];
-        ptrWordOut[3] = state[3];
-	ptrWordOut[4] = state[4];
-	ptrWordOut[5] = state[5];
+	//M[row][col] = M[prev][col] XOR rand
+	ptrWordOut[0] = _mm_xor_si128(ptrWordIn[0], state[0]);
+	ptrWordOut[1] = _mm_xor_si128(ptrWordIn[1], state[1]);
+	ptrWordOut[2] = _mm_xor_si128(ptrWordIn[2], state[2]);
+	ptrWordOut[3] = _mm_xor_si128(ptrWordIn[3], state[3]);
+	ptrWordOut[4] = _mm_xor_si128(ptrWordIn[4], state[4]);
+	ptrWordOut[5] = _mm_xor_si128(ptrWordIn[5], state[5]);
 
-	((uint64_t *) ptrWordInOut)[0] ^= ((uint64_t *) state)[11];
-	((uint64_t *) ptrWordInOut)[1] ^= ((uint64_t *) state)[0];
-	((uint64_t *) ptrWordInOut)[2] ^= ((uint64_t *) state)[1];
-	((uint64_t *) ptrWordInOut)[3] ^= ((uint64_t *) state)[2];
-	((uint64_t *) ptrWordInOut)[4] ^= ((uint64_t *) state)[3];
-	((uint64_t *) ptrWordInOut)[5] ^= ((uint64_t *) state)[4];
-	((uint64_t *) ptrWordInOut)[6] ^= ((uint64_t *) state)[5];
-	((uint64_t *) ptrWordInOut)[7] ^= ((uint64_t *) state)[6];
-	((uint64_t *) ptrWordInOut)[8] ^= ((uint64_t *) state)[7];
-	((uint64_t *) ptrWordInOut)[9] ^= ((uint64_t *) state)[8];
-	((uint64_t *) ptrWordInOut)[10] ^= ((uint64_t *) state)[9];
-	((uint64_t *) ptrWordInOut)[11] ^= ((uint64_t *) state)[10];
+	ptrWordInOut[0] = _mm_xor_si128(ptrWordInOut[0], state[5]);
+    ptrWordInOut[1] = _mm_xor_si128(ptrWordInOut[1], state[0]);
+    ptrWordInOut[2] = _mm_xor_si128(ptrWordInOut[2], state[1]);
+    ptrWordInOut[3] = _mm_xor_si128(ptrWordInOut[3], state[2]);
+    ptrWordInOut[4] = _mm_xor_si128(ptrWordInOut[4], state[3]);
+    ptrWordInOut[5] = _mm_xor_si128(ptrWordInOut[5], state[4]);
 
 	//Goes to next column (i.e., next block in sequence)
         ptrWordInOut += BLOCK_LEN_INT128;
         ptrWordIn += BLOCK_LEN_INT128;
-        ptrWordOut += BLOCK_LEN_INT128;
+        ptrWordOut -= BLOCK_LEN_INT128;
     }
 }
 
@@ -216,22 +272,23 @@ void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut,
  * @param nCols          Number of Columns
  *
  */
-void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut) {
+void reducedDuplexRow(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut) {
     __m128i* ptrWordInOut = rowInOut;     //pointer to row
     __m128i* ptrWordIn = rowIn;           //pointer to row'
     __m128i* ptrWordOut = rowOut;         //pointer to row*
+
     int i;
     for (i = 0; i < N_COLS; i++) {
-        //Absorbing "M[rowInOut] XOR M[rowIn]"
-        state[0] = _mm_xor_si128(state[0], _mm_xor_si128(ptrWordInOut[0], ptrWordIn[0]));
-        state[1] = _mm_xor_si128(state[1], _mm_xor_si128(ptrWordInOut[1], ptrWordIn[1]));
-        state[2] = _mm_xor_si128(state[2], _mm_xor_si128(ptrWordInOut[2], ptrWordIn[2]));
-        state[3] = _mm_xor_si128(state[3], _mm_xor_si128(ptrWordInOut[3], ptrWordIn[3]));
-        state[4] = _mm_xor_si128(state[4], _mm_xor_si128(ptrWordInOut[4], ptrWordIn[4]));
-        state[5] = _mm_xor_si128(state[5], _mm_xor_si128(ptrWordInOut[5], ptrWordIn[5]));
+        //Absorbing "M[prev] [+] M[row*]"
+	state[0] = _mm_xor_si128(state[0], ptrWordIn[0]  + ptrWordInOut[0]);
+	state[1] = _mm_xor_si128(state[1], ptrWordIn[1]  + ptrWordInOut[1]);
+	state[2] = _mm_xor_si128(state[2], ptrWordIn[2]  + ptrWordInOut[2]);
+	state[3] = _mm_xor_si128(state[3], ptrWordIn[3]  + ptrWordInOut[3]);
+	state[4] = _mm_xor_si128(state[4], ptrWordIn[4]  + ptrWordInOut[4]);
+	state[5] = _mm_xor_si128(state[5], ptrWordIn[5]  + ptrWordInOut[5]);
 
         //Applies the reduced-round transformation f to the sponge's state
-        reducedBlake2bLyraSSE(state);
+        reducedBlake2bLyra(state);
 
         //M[rowOut][col] = M[rowOut][col] XOR rand
         ptrWordOut[0] = _mm_xor_si128(ptrWordOut[0], state[0]);
@@ -241,18 +298,12 @@ void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m1
         ptrWordOut[4] = _mm_xor_si128(ptrWordOut[4], state[4]);
         ptrWordOut[5] = _mm_xor_si128(ptrWordOut[5], state[5]);
 
-        ((uint64_t *) ptrWordInOut)[0] ^= ((uint64_t *) state)[11];
-        ((uint64_t *) ptrWordInOut)[1] ^= ((uint64_t *) state)[0];
-        ((uint64_t *) ptrWordInOut)[2] ^= ((uint64_t *) state)[1];
-        ((uint64_t *) ptrWordInOut)[3] ^= ((uint64_t *) state)[2];
-        ((uint64_t *) ptrWordInOut)[4] ^= ((uint64_t *) state)[3];
-        ((uint64_t *) ptrWordInOut)[5] ^= ((uint64_t *) state)[4];
-        ((uint64_t *) ptrWordInOut)[6] ^= ((uint64_t *) state)[5];
-        ((uint64_t *) ptrWordInOut)[7] ^= ((uint64_t *) state)[6];
-        ((uint64_t *) ptrWordInOut)[8] ^= ((uint64_t *) state)[7];
-        ((uint64_t *) ptrWordInOut)[9] ^= ((uint64_t *) state)[8];
-        ((uint64_t *) ptrWordInOut)[10] ^= ((uint64_t *) state)[9];
-        ((uint64_t *) ptrWordInOut)[11] ^= ((uint64_t *) state)[10];
+        ptrWordInOut[0] = _mm_xor_si128(ptrWordInOut[0], state[5]);
+        ptrWordInOut[1] = _mm_xor_si128(ptrWordInOut[1], state[0]);
+        ptrWordInOut[2] = _mm_xor_si128(ptrWordInOut[2], state[1]);
+        ptrWordInOut[3] = _mm_xor_si128(ptrWordInOut[3], state[2]);
+        ptrWordInOut[4] = _mm_xor_si128(ptrWordInOut[4], state[3]);
+        ptrWordInOut[5] = _mm_xor_si128(ptrWordInOut[5], state[4]);
 
         //Goes to next block
         ptrWordOut += BLOCK_LEN_INT128;

@@ -73,32 +73,33 @@ static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
     G(r,6,v[ 2],v[ 7],v[ 8],v[13]); \
     G(r,7,v[ 3],v[ 4],v[ 9],v[14]);
 
-/**
- * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
- * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges
- * typically have their internal state initialized with zeros, Blake2b's G function
- * has a fixed point: if the internal state and message are both filled with zeros. the 
- * resulting permutation will always be a block filled with zeros; this happens because 
- * Blake2b does not use the constants originally employed in Blake2 inside its G function, 
- * relying on the IV for avoiding possible fixed points.
- * 
- * @param state         The 1024-bit array to be initialized
- */
-static inline void initStateSSE(__m128i state[/*8*/]){
-    memset(state, 0, 64); //first 512 bits are zeros
-    state[4] = _mm_load_si128((__m128i *) &blake2b_IV[0]);
-    state[5] = _mm_load_si128((__m128i *) &blake2b_IV[2]);
-    state[6] = _mm_load_si128((__m128i *) &blake2b_IV[4]);
-    state[7] = _mm_load_si128((__m128i *) &blake2b_IV[6]);
-}
+//---- Housekeeping
+void initState(__m128i state[/*8*/]);
 
-void squeezeSSE(__m128i *state, unsigned char *out, unsigned int len);
+//---- Squeezes
+void squeeze(__m128i *state, unsigned char *out, unsigned int len);
+void reducedSqueezeRow0(__m128i* state, __m128i* row);
+
+//---- Absorbs
+void absorbBlock(__m128i *state, const __m128i *in);
+void absorbBlockBlake2Safe(__m128i *state, const __m128i *in);
+
+//---- Duplexes
+void reducedDuplexRow1(__m128i *state, __m128i *rowIn, __m128i *rowOut);
+void reducedDuplexRowSetup(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
+void reducedDuplexRow(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
+
+//---- Misc
+void printArray(unsigned char *array, unsigned int size, char *name);
+
+
+/*void squeezeSSE(__m128i *state, unsigned char *out, unsigned int len);
 void absorbBlockSSE(__m128i *state, const __m128i *in);
 void squeezeBlockSSE(__m128i* state, __m128i* block);
 void absorbPaddedSaltSSE(__m128i *state, const unsigned char *salt);
 void reducedSqueezeRowSSE(__m128i* state, __m128i* row);
 void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
-void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
+void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);*/
 
 void printArray(unsigned char *array, unsigned int size, char *name);
 

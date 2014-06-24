@@ -91,8 +91,11 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     //============================= Basic variables ============================//
     int64_t row = 2; //index of row to be processed
     int64_t prev = 1; //index of prev (last row ever computed/modified)
-    int64_t rowa = 0; //index of row* (a previous row, deterministically picked during Setup and randomly picked during Wandering)
+    int64_t rowa = 0; //index of row* (a previous row, deterministically picked during Setup and randomly picked while Wandering)
     int64_t tau; //Time Loop iterator
+    int64_t step = 1; //Visitation step (used during Setup and Wandering phases)
+    int64_t window = 2; //Visitation window (used to define which rows can be revisited during Setup)
+    int64_t gap = 1; //Modifier to the step, assuming the values 1 or -1
     int64_t i; //auxiliary iteration counter
     //==========================================================================/
 
@@ -116,21 +119,15 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     }
     //==========================================================================/
 
-    //============== Initializing the Sponge State =============/
-    //Sponge state: 8 __m128i, BLOCK_LEN_INT128 words of them for the bitrate (b) and the remainder for the capacity (c)
-    __m128i *state = malloc(8 * sizeof (__m128i));
-    initStateSSE(state);
-    //========================================================//
-
     //============= Getting the password + salt + basil padded with 10*1 ===============//
 
     //OBS.:The memory matrix will temporarily hold the password: not for saving memory,
     //but this ensures that the password copied locally will be overwritten as soon as possible
 
     //First, we clean enough blocks for the password, salt, basil and padding
-    int nBlocksInput = ((saltlen + pwdlen + 6*sizeof(int)) / BLOCK_LEN_BYTES) + 1;
+    uint64_t nBlocksInput = ((saltlen + pwdlen + 6*sizeof(int)) / BLOCK_LEN_BLAKE2_SAFE_BYTES) + 1;
     byte *ptrByte = (byte*) wholeMatrix;
-    memset(ptrByte, 0, nBlocksInput * BLOCK_LEN_BYTES);
+    memset(ptrByte, 0, nBlocksInput * BLOCK_LEN_BLAKE2_SAFE_BYTES);
 
     //Prepends the password
     memcpy(ptrByte, pwd, pwdlen);
@@ -159,86 +156,87 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     //Now comes the padding
     *ptrByte = 0x80; //first byte of padding: right after the password
     ptrByte = (byte*) wholeMatrix; //resets the pointer to the start of the memory matrix
-    ptrByte += nBlocksInput * BLOCK_LEN_BYTES - 1; //sets the pointer to the correct position: end of incomplete block
+    ptrByte += nBlocksInput * BLOCK_LEN_BLAKE2_SAFE_BYTES - 1; //sets the pointer to the correct position: end of incomplete block
     *ptrByte ^= 0x01; //last byte of padding: at the end of the last incomplete block
 
     //==========================================================================/
+
+    //============== Initializing the Sponge State =============/
+    //Sponge state: 8 __m128i, BLOCK_LEN_INT128 words of them for the bitrate (b) and the remainder for the capacity (c)
+    __m128i *state = malloc(8 * sizeof (__m128i));
+    initState(state);
+    //========================================================//
 
     //====================== Setup Phase =====================//
 
     //Absorbing salt and password
     ptrWord = wholeMatrix;
     for (i = 0; i < nBlocksInput; i++) {
-        absorbBlockSSE(state, ptrWord); //absorbs each block of pad(pwd || salt || basil)
-        ptrWord += BLOCK_LEN_INT128; //goes to next block of pad(pwd || salt || basil)
+        absorbBlockBlake2Safe(state, ptrWord); //absorbs each block of pad(pwd || salt || basil)
+	ptrWord += BLOCK_LEN_BLAKE2_SAFE_BYTES; //goes to next block of pad(pwd || salt || basil)
     }
     
-    reducedSqueezeRowSSE(state, memMatrix[0]); //The locally copied password is most likely overwritten here
-    reducedSqueezeRowSSE(state, memMatrix[1]);
+    //Initializes M[0] and M[1]
+    reducedSqueezeRow0(state, memMatrix[0]); //The locally copied password is most likely overwritten here
+    reducedDuplexRow1(state, memMatrix[0], memMatrix[1]);
 
     do {
         //M[row] = rand; //M[row*] = M[row*] XOR rotW(rand)
-        reducedDuplexRowSetupSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
+	reducedDuplexRowSetup(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
         //updates the value of row* (deterministically picked during Setup))
-        rowa--;
-        if (rowa < 0) {
-            rowa = prev;
-        }
-        //update prev: it now points to the last row ever computed
-        prev = row;
-        //updates row: does to the next row to be computed
-        row++;
+	rowa = (rowa + step) & (window - 1);
+	//update prev: it now points to the last row ever computed
+	prev = row;
+	//updates row: goes to the next row to be computed
+	row++;
+
+	//Checks if all rows in the window where visited.
+	if (rowa == 0) {
+	    step = window + gap; //changes the step: approximately doubles its value
+	    window *= 2; //doubles the size of the re-visitation window
+	    gap = -gap; //inverts the modifier to the step 
+	}
+
     } while (row < m_cost);
     //========================================================//
 
     //================== Wandering Phase =====================//
-    int maxIndex = m_cost - 1;
+    row = 0; //Resets the visitation to the first row of the memory matrix
     for (tau = 1; tau <= t_cost; tau++) {
         //========= Iterations for an odd tau ==========
-        row = maxIndex; //Odd iterations of the Wandering phase start with the last row ever computed
-        prev = 0; //The companion "prev" is 0
-        do {
+        //Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
+	step = (tau % 2 == 0) ? -1 : m_cost / 2 - 1;
+	do {
             //Selects a pseudorandom index row*
-            //rowa = ((unsigned int) (((int *) state)[0] ^ prev)) & maxIndex; //(USE THIS IF m_cost IS A POWER OF 2)
-            rowa = ((unsigned int) (((unsigned int *) state)[0] ^ prev)) % m_cost; //(USE THIS FOR THE "GENERIC" CASE)
+	    //------------------------------------------------------------------------------------------
+	    //rowa = ((unsigned int) (((int *) state)[0])) & m_cost - 1; //(USE THIS IF m_cost IS A POWER OF 2)
+            rowa = ((unsigned int) (((unsigned int *) state)[0])) % m_cost; //(USE THIS FOR THE "GENERIC" CASE)
+	    //------------------------------------------------------------------------------------------
 
             //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-            reducedDuplexRowSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
+	    reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
-            //Goes to the next row (inverse order)
-            prev = row;
-            row--;
-        } while (row >= 0);
+	    //update prev: it now points to the last row ever computed
+	    prev = row;
+	    
+	    //updates row: goes to the next row to be computed
+	    //------------------------------------------------------------------------------------------
+	    //row = (row + step) & (m_cost-1);	//(USE THIS IF m_cost IS A POWER OF 2)
+	    row = (row + step) % m_cost; //(USE THIS FOR THE "GENERIC" CASE)
+	    //------------------------------------------------------------------------------------------
 
-        if (++tau > t_cost) {
-            break; //end of the Wandering phase
-        }
-
-        //========= Iterations for an even tau ==========
-        row = 0; //Even iterations of the Wandering phase start with row = 0
-        prev = maxIndex; //The companion "prev" is the last row in the memory matrix
-        do {
-            //rowa = ((unsigned int) (((int *) state)[0] ^ prev)) & maxIndex; //(USE THIS IF m_cost IS A POWER OF 2)
-            rowa = ((unsigned int) (((unsigned int *) state)[0] ^ prev)) % m_cost; //(USE THIS FOR THE "GENERIC" CASE)
-
-            //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-            reducedDuplexRowSSE(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
-
-            //Goes to the next row (direct order)
-            prev = row;
-            row++;
-        } while (row <= maxIndex);
+	} while (row != 0);
     }
     //========================================================//
 
-    //==================== Wrap-up Phase =====================//
+    //============================ Wrap-up Phase ===============================//
     //Absorbs the last block of the memory matrix
-    absorbBlockSSE(state, memMatrix[rowa]);
+    absorbBlock(state, memMatrix[rowa]);
 
     //Squeezes the key
-    squeezeSSE(state, K, kLen);
-    //========================================================//
+    squeeze(state, K, kLen);
+    //==========================================================================/
     
     //========================= Freeing the memory =============================//
     free(memMatrix);

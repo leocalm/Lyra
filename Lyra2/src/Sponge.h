@@ -73,39 +73,36 @@ static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
     G(r,7,v[ 3],v[ 4],v[ 9],v[14]);
 
 
-/**
- * Initializes the Sponge State. The first 512 bits are set to zeros and the remainder 
- * receive Blake2b's IV as per Blake2b's specification. <b>Note:</b> Even though sponges
- * typically have their internal state initialized with zeros, Blake2b's G function
- * has a fixed point: if the internal state and message are both filled with zeros. the 
- * resulting permutation will always be a block filled with zeros; this happens because 
- * Blake2b does not use the constants originally employed in Blake2 inside its G function, 
- * relying on the IV for avoiding possible fixed points.
- * 
- * @param state         The 1024-bit array to be initialized
- */
-static inline void initState(uint64_t state[/*16*/]) {
-    memset(state, 0, 64); //first 512 bis are zeros
-    state[8] = blake2b_IV[0];
-    state[9] = blake2b_IV[1];
-    state[10] = blake2b_IV[2];
-    state[11] = blake2b_IV[3];
-    state[12] = blake2b_IV[4];
-    state[13] = blake2b_IV[5];
-    state[14] = blake2b_IV[6];
-    state[15] = blake2b_IV[7];
-}
+//---- Housekeeping
+void initState(uint64_t state[/*16*/]);
 
-
+//---- Squeezes
 void squeeze(uint64_t *state, unsigned char *out, unsigned int len);
+void reducedSqueezeRow0(uint64_t* state, uint64_t* row);
+
+//---- Absorbs
 void absorbBlock(uint64_t *state, const uint64_t *in);
-void squeezeBlock(uint64_t* state, uint64_t* block);
-void reducedSqueezeRow(uint64_t* state, uint64_t* row);
+void absorbBlockBlake2Safe(uint64_t *state, const uint64_t *in);
+
+//---- Duplexes
+void reducedDuplexRow1(uint64_t *state, uint64_t *rowIn, uint64_t *rowOut);
 void reducedDuplexRowSetup(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
 void reducedDuplexRow(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
 
+//---- Misc
 void printArray(unsigned char *array, unsigned int size, char *name);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////TESTS////
+//void reducedDuplexRowc(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
+//void reducedDuplexRowd(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
+//void reducedDuplexRowSetupv4(uint64_t *state, uint64_t *rowIn1, uint64_t *rowIn2, uint64_t *rowOut1, uint64_t *rowOut2);
+//void reducedDuplexRowSetupv5(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
+//void reducedDuplexRowSetupv5c(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
+//void reducedDuplexRowSetupv5d(uint64_t *state, uint64_t *rowIn, uint64_t *rowInOut, uint64_t *rowOut);
+/////////////
+
 
 #endif /* SPONGE_H_ */
