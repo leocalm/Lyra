@@ -27,8 +27,8 @@
 /**
  * Executes Lyra2 based on the G function from Blake2b. The number of columns of the memory matrix is set to nCols = 64.
  * This version supports salts and passwords whose combined length is smaller than the size of the memory matrix,
- * (i.e., (nRows x nCols x b) bits, where "b" is the underlying sponge's bitrate). In this implementation, the "basil" 
- * is composed by all integer parameters (treated as type "unsigned int") in the order they are provided, plus the value 
+ * (i.e., (nRows x nCols x b) bits, where "b" is the underlying sponge's bitrate). In this implementation, the "basil"
+ * is composed by all integer parameters (treated as type "unsigned int") in the order they are provided, plus the value
  * of nCols, (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols).
  *
  * @param out The derived key to be output by the algorithm
@@ -57,8 +57,8 @@ inline void print64(uint64_t *v) {
 /**
  * Executes Lyra2 based on the G function from Blake2b. This version supports salts and passwords
  * whose combined length is smaller than the size of the memory matrix, (i.e., (nRows x nCols x b) bits,
- * where "b" is the underlying sponge's bitrate). In this implementation, the "basil" is composed by all 
- * integer parameters (treated as type "unsigned int") in the order they are provided, plus the value 
+ * where "b" is the underlying sponge's bitrate). In this implementation, the "basil" is composed by all
+ * integer parameters (treated as type "unsigned int") in the order they are provided, plus the value
  * of nCols, (i.e., basil = kLen || pwdlen || saltlen || timeCost || nRows || nCols).
  *
  * @param K The derived key to be output by the algorithm
@@ -86,31 +86,28 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     int64_t i; //auxiliary iteration counter
     //==========================================================================/
 
-
     //========== Initializing the Memory Matrix and pointers to it =============//
-
     //Tries to allocate enough space for the whole memory matrix
     i = (int64_t) ((int64_t) nRows * (int64_t) ROW_LEN_BYTES);
     uint64_t *wholeMatrix = malloc(i);
     if (wholeMatrix == NULL) {
-	return -1;
+      return -1;
     }
 
     //Allocates pointers to each row of the matrix
     uint64_t **memMatrix = malloc(nRows * sizeof (uint64_t*));
     if (memMatrix == NULL) {
-	return -1;
+      return -1;
     }
     //Places the pointers in the correct positions
     uint64_t *ptrWord = wholeMatrix;
     for (i = 0; i < nRows; i++) {
-	memMatrix[i] = ptrWord;
-	ptrWord += ROW_LEN_INT64;
+      memMatrix[i] = ptrWord;
+      ptrWord += ROW_LEN_INT64;
     }
     //==========================================================================/
 
     //============= Getting the password + salt + basil padded with 10*1 ===============//
-
     //OBS.:The memory matrix will temporarily hold the password: not for saving memory,
     //but this ensures that the password copied locally will be overwritten as soon as possible
 
@@ -146,25 +143,23 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     ptrByte = (byte*) wholeMatrix; //resets the pointer to the start of the memory matrix
     ptrByte += nBlocksInput * BLOCK_LEN_BLAKE2_SAFE_BYTES - 1; //sets the pointer to the correct position: end of incomplete block
     *ptrByte ^= 0x01; //last byte of padding: at the end of the last incomplete block
-
     //==========================================================================/
 
     //======================= Initializing the Sponge State ====================//
     //Sponge state: 16 uint64_t, BLOCK_LEN_INT64 words of them for the bitrate (b) and the remainder for the capacity (c)
     uint64_t *state = malloc(16 * sizeof (uint64_t));
     if (state == NULL) {
-	return -1;
+      return -1;
     }
     initState(state);
     //==========================================================================/
 
     //================================ Setup Phase =============================//
-
     //Absorbing salt, password and basil: this is the only place in which the block length is hard-coded to 512 bits
     ptrWord = wholeMatrix;
     for (i = 0; i < nBlocksInput; i++) {
-	absorbBlockBlake2Safe(state, ptrWord); //absorbs each block of pad(pwd || salt || basil)
-	ptrWord += BLOCK_LEN_BLAKE2_SAFE_BYTES; //goes to next block of pad(pwd || salt || basil)
+      absorbBlockBlake2Safe(state, ptrWord); //absorbs each block of pad(pwd || salt || basil)
+      ptrWord += BLOCK_LEN_BLAKE2_SAFE_BYTES; //goes to next block of pad(pwd || salt || basil)
     }
 
     //Initializes M[0] and M[1]
@@ -172,23 +167,23 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     reducedDuplexRow1(state, memMatrix[0], memMatrix[1]);
 
     do {
-	//M[row] = rand; //M[row*] = M[row*] XOR rotW(rand)
-	reducedDuplexRowSetup(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
+      //M[row] = rand; //M[row*] = M[row*] XOR rotW(rand)
+      reducedDuplexRowSetup(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
 
-	//updates the value of row* (deterministically picked during Setup))
-	rowa = (rowa + step) & (window - 1);
-	//update prev: it now points to the last row ever computed
-	prev = row;
-	//updates row: goes to the next row to be computed
-	row++;
+      //updates the value of row* (deterministically picked during Setup))
+      rowa = (rowa + step) & (window - 1);
+      //update prev: it now points to the last row ever computed
+      prev = row;
+      //updates row: goes to the next row to be computed
+      row++;
 
-	//Checks if all rows in the window where visited.
-	if (rowa == 0) {
-	    step = window + gap; //changes the step: approximately doubles its value
-	    window *= 2; //doubles the size of the re-visitation window
-	    gap = -gap; //inverts the modifier to the step 
-	}
+      //Checks if all rows in the window where visited.
+      if (rowa == 0) {
+      step = window + gap; //changes the step: approximately doubles its value
+      window *= 2; //doubles the size of the re-visitation window
+      gap = -gap; //inverts the modifier to the step
+    }
 
     } while (row < nRows);
     //==========================================================================/
@@ -196,28 +191,28 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     //============================ Wandering Phase =============================//
     row = 0; //Resets the visitation to the first row of the memory matrix
     for (tau = 1; tau <= timeCost; tau++) {
-	//Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
-	step = (tau % 2 == 0) ? -1 : nRows / 2 - 1;
-	do {
-	    //Selects a pseudorandom index row*
-	    //------------------------------------------------------------------------------------------
-	    //rowa = ((unsigned int)state[0]) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
-	    rowa = ((unsigned int) (state[0])) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
-	    //------------------------------------------------------------------------------------------
+    	//Step is approximately half the number of all rows of the memory matrix for an odd tau; otherwise, it is -1
+    	step = (tau % 2 == 0) ? -1 : nRows / 2 - 1;
+    	do {
+  	    //Selects a pseudorandom index row*
+  	    //------------------------------------------------------------------------------------------
+  	    //rowa = ((unsigned int)state[0]) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
+  	    rowa = ((unsigned int) (state[0])) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
+  	    //------------------------------------------------------------------------------------------
 
-	    //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
-	    reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
+  	    //Performs a reduced-round duplexing operation over M[row*] XOR M[prev], updating both M[row*] and M[row]
+  	    reducedDuplexRow(state, memMatrix[prev], memMatrix[rowa], memMatrix[row]);
 
-	    //update prev: it now points to the last row ever computed
-	    prev = row;
-	    
-	    //updates row: goes to the next row to be computed
-	    //------------------------------------------------------------------------------------------
-	    //row = (row + step) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
-	    row = (row + step) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
-	    //------------------------------------------------------------------------------------------
+  	    //update prev: it now points to the last row ever computed
+  	    prev = row;
 
-	} while (row != 0);
+  	    //updates row: goes to the next row to be computed
+  	    //------------------------------------------------------------------------------------------
+  	    //row = (row + step) & (nRows-1);	//(USE THIS IF nRows IS A POWER OF 2)
+  	    row = (row + step) % nRows; //(USE THIS FOR THE "GENERIC" CASE)
+  	    //------------------------------------------------------------------------------------------
+
+      } while (row != 0);
     }
     //==========================================================================/
 
@@ -240,4 +235,3 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
 
     return 0;
 }
-
