@@ -1,7 +1,7 @@
 /**
  * Header file for the Lyra2 Password Hashing Scheme (PHS).
  * 
- * Author: The Lyra PHC team (http://www.lyra-kdf.net/) -- 2014.
+ * Author: The Lyra PHC team (http://www.lyra2.net/) -- 2015.
  * 
  * This software is hereby placed in the public domain.
  *
@@ -22,43 +22,19 @@
 
 typedef unsigned char byte ;
 
-//Block length required so Blake2's Initialization Vector (IV) is not overwritten (THIS SHOULD NOT BE MODIFIED)
-#define BLOCK_LEN_BLAKE2_SAFE_INT64 8                                   //512 bits (=64 bytes, =8 uint64_t)
-#define BLOCK_LEN_BLAKE2_SAFE_BYTES (BLOCK_LEN_BLAKE2_SAFE_INT64 * 8)   //same as above, in bytes
-
-
-#ifdef BLOCK_LEN_BITS
-        #define BLOCK_LEN_INT64 (BLOCK_LEN_BITS/64)      //Block length: 768 bits (=96 bytes, =12 uint64_t)
-        #define BLOCK_LEN_BYTES (BLOCK_LEN_BITS/8)       //Block length, in bytes
-#else   //default block lenght: 768 bits
-        #define BLOCK_LEN_INT64 12                       //Block length: 768 bits (=96 bytes, =12 uint64_t)
-        #define BLOCK_LEN_BYTES (BLOCK_LEN_INT64 * 8)    //Block length, in bytes
-#endif
-
 #ifndef N_COLS
-        #define N_COLS 64                                //Number of columns in the memory matrix: fixed to 64 by default
+        #define N_COLS 256                                      //Number of columns in the memory matrix: fixed to 256 by default
 #endif
 
-#define ROW_LEN_INT64 (BLOCK_LEN_INT64 * N_COLS) //Total length of a row: N_COLS blocks
-#define ROW_LEN_BYTES (ROW_LEN_INT64 * 8)        //Number of bytes per row
+#ifndef nPARALLEL
+        #define nPARALLEL 2                                     //Number of parallel threads
+#endif
 
+#define ROW_LEN_INT64 (BLOCK_LEN_INT64 * N_COLS)                //Total length of a row: N_COLS blocks
+#define ROW_LEN_BYTES (ROW_LEN_INT64 * 8)                       //Number of bytes per row
 
 int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, const void *salt, unsigned int saltlen, unsigned int timeCost, unsigned int nRows, unsigned int nCols);
 
 int PHS(void *out, size_t outlen, const void *in, size_t inlen, const void *salt, size_t saltlen, unsigned int t_cost, unsigned int m_cost);
-
-/////TESTS/////
-//void wander(unsigned int timeCost, unsigned int nRows);
-//void wander(unsigned int timeCost, unsigned int nRows);
-//void wanderc(unsigned int timeCost, unsigned int nRows);
-//void wanderd(unsigned int timeCost, unsigned int nRows);
-//void setup(unsigned int timeCost, unsigned int nRows);
-//void setupv5window(unsigned int timeCost, unsigned int nRows);
-//void setupc(unsigned int timeCost, unsigned int nRows);
-//void setupd(unsigned int timeCost, unsigned int nRows);
-//void setupv5(unsigned int timeCost, unsigned int nRows);
-//void setupv5c(unsigned int timeCost, unsigned int nRows);
-//void setupv5d(unsigned int timeCost, unsigned int nRows);
-///////////////
 
 #endif /* LYRA2_H_ */

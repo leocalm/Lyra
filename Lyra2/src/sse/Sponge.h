@@ -1,9 +1,9 @@
 /**
- * Header file for Blake2b's internal permutation in the form of a sponge. 
+ * Header file for Blake2b's and BlaMka's internal permutation in the form of a sponge. 
  * This code is based on the original Blake2b's implementation provided by 
  * Samuel Neves (https://blake2.net/). SSE-oriented implementation.
  * 
- * Author: The Lyra PHC team (http://www.lyra-kdf.net/) -- 2014.
+ * Author: The Lyra PHC team (http://www.lyra2.net/) -- 2015.
  * 
  * This software is hereby placed in the public domain.
  *
@@ -25,13 +25,34 @@
 #include <stdint.h>
 #include <emmintrin.h>
 
-
 #if defined(__GNUC__)
 #define ALIGN __attribute__ ((aligned(32)))
 #elif defined(_MSC_VER)
 #define ALIGN __declspec(align(32))
 #else
 #define ALIGN
+#endif
+
+//Block length required so Blake2's Initialization Vector (IV) is not overwritten (THIS SHOULD NOT BE MODIFIED)
+#define BLOCK_LEN_BLAKE2_SAFE_INT64 8                                   //512 bits (=64 bytes, =8 uint64_t)
+#define BLOCK_LEN_BLAKE2_SAFE_INT128 (BLOCK_LEN_BLAKE2_SAFE_INT64/2)                                   
+#define BLOCK_LEN_BLAKE2_SAFE_BYTES (BLOCK_LEN_BLAKE2_SAFE_INT64 * 8)   //same as above, in bytes
+
+//default block length: 768 bits
+#ifndef BLOCK_LEN_INT64             
+        #define BLOCK_LEN_INT64 12                                      //Block length: 768 bits (=96 bytes, =12 uint64_t)
+#endif
+
+#define BLOCK_LEN_INT128 (BLOCK_LEN_INT64/2)
+
+#define BLOCK_LEN_BYTES (BLOCK_LEN_INT64 * 8)                           //Block length, in bytes
+
+#ifndef SPONGE
+        #define SPONGE 0                                                //SPONGE 0 = BLAKE2, SPONGE 1 = BLAMKA and SPONGE 2 = HALF-ROUND BLAMKA
+#endif
+
+#ifndef RHO
+        #define RHO 1                                                   //Number of reduced rounds performed
 #endif
 
 /*Blake 2b IV Array*/
@@ -43,64 +64,89 @@ static const uint64_t blake2b_IV[8] =
   0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL
 };
 
-
-static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
-    return ( w >> c ) | ( w << ( 64 - c ) );
+/*Main change compared with Blake2b*/
+static inline __m128i fBlaMka(__m128i x, __m128i y){
+    __m128i z = _mm_mul_epu32 (x, y);
+    
+    z = _mm_slli_epi64 (z, 1);
+    
+    z = _mm_add_epi64 (z, x);
+    z = _mm_add_epi64 (z, y);
+    
+    return z;
 }
 
-/*Blake's G function*/
-#define G(r,i,a,b,c,d) \
-  do { \
-    a = a + b; \
-    d = rotr64(d ^ a, 32); \
-    c = c + d; \
-    b = rotr64(b ^ c, 24); \
-    a = a + b; \
-    d = rotr64(d ^ a, 16); \
-    c = c + d; \
-    b = rotr64(b ^ c, 63); \
-  } while(0)
+#define G1_BLAMKA(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h) \
+  row1l = fBlaMka(row1l, row2l); \
+  row1h = fBlaMka(row1h, row2h); \
+  \
+  row4l = _mm_xor_si128(row4l, row1l); \
+  row4h = _mm_xor_si128(row4h, row1h); \
+  \
+  row4l = _mm_roti_epi64(row4l, -32); \
+  row4h = _mm_roti_epi64(row4h, -32); \
+  \
+  row3l = fBlaMka(row3l, row4l); \
+  row3h = fBlaMka(row3h, row4h); \
+  \
+  row2l = _mm_xor_si128(row2l, row3l); \
+  row2h = _mm_xor_si128(row2h, row3h); \
+  \
+  row2l = _mm_roti_epi64(row2l, -24); \
+  row2h = _mm_roti_epi64(row2h, -24); \
+ 
+#define G2_BLAMKA(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h) \
+  row1l = fBlaMka(row1l, row2l); \
+  row1h = fBlaMka(row1h, row2h); \
+  \
+  row4l = _mm_xor_si128(row4l, row1l); \
+  row4h = _mm_xor_si128(row4h, row1h); \
+  \
+  row4l = _mm_roti_epi64(row4l, -16); \
+  row4h = _mm_roti_epi64(row4h, -16); \
+  \
+  row3l = fBlaMka(row3l, row4l); \
+  row3h = fBlaMka(row3h, row4h); \
+  \
+  row2l = _mm_xor_si128(row2l, row3l); \
+  row2h = _mm_xor_si128(row2h, row3h); \
+  \
+  row2l = _mm_roti_epi64(row2l, -63); \
+  row2h = _mm_roti_epi64(row2h, -63); \
 
+/*One Round of the BlaMka's compression function*/
+#define ROUND_LYRA_BLAMKA(r) \
+  G1_BLAMKA(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  G2_BLAMKA(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  DIAGONALIZE(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  G1_BLAMKA(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  G2_BLAMKA(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  UNDIAGONALIZE(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]);
 
-/*One Round of the Blake's 2 compression function*/
-#define ROUND_LYRA(r)  \
-    G(r,0,v[ 0],v[ 4],v[ 8],v[12]); \
-    G(r,1,v[ 1],v[ 5],v[ 9],v[13]); \
-    G(r,2,v[ 2],v[ 6],v[10],v[14]); \
-    G(r,3,v[ 3],v[ 7],v[11],v[15]); \
-    G(r,4,v[ 0],v[ 5],v[10],v[15]); \
-    G(r,5,v[ 1],v[ 6],v[11],v[12]); \
-    G(r,6,v[ 2],v[ 7],v[ 8],v[13]); \
-    G(r,7,v[ 3],v[ 4],v[ 9],v[14]);
+/*Half Round of the BlaMka's compression function*/
+#define HALF_ROUND_LYRA_BLAMKA(r) \
+  G1_BLAMKA(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  G2_BLAMKA(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]); \
+  DIAGONALIZE(v[0],v[2],v[4],v[6],v[1],v[3],v[5],v[7]);
 
 //---- Housekeeping
 void initState(__m128i state[/*8*/]);
 
 //---- Squeezes
 void squeeze(__m128i *state, unsigned char *out, unsigned int len);
-void reducedSqueezeRow0(__m128i* state, __m128i* row);
+void reducedSqueezeRow0(__m128i* state, __m128i* rowOut);
 
 //---- Absorbs
-void absorbBlock(__m128i *state, const __m128i *in);
+void absorbColumn(__m128i *state, __m128i *in);
 void absorbBlockBlake2Safe(__m128i *state, const __m128i *in);
 
 //---- Duplexes
-void reducedDuplexRow1(__m128i *state, __m128i *rowIn, __m128i *rowOut);
-void reducedDuplexRowSetup(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
-void reducedDuplexRow(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
+void reducedDuplexRow1and2(__m128i *state, __m128i *rowIn, __m128i *rowOut);
+void reducedDuplexRowFilling(__m128i *state, __m128i *rowInOut, __m128i *rowIn0, __m128i *rowIn1, __m128i *rowOut);
+void reducedDuplexRowWandering(__m128i *state, __m128i *rowInOut0, __m128i *rowInOut1, __m128i *rowIn0, __m128i *rowIn1);
+void reducedDuplexRowWanderingParallel(__m128i *state, __m128i *rowInOut0, __m128i *rowInP, __m128i *rowIn0);
 
 //---- Misc
-void printArray(unsigned char *array, unsigned int size, char *name);
-
-
-/*void squeezeSSE(__m128i *state, unsigned char *out, unsigned int len);
-void absorbBlockSSE(__m128i *state, const __m128i *in);
-void squeezeBlockSSE(__m128i* state, __m128i* block);
-void absorbPaddedSaltSSE(__m128i *state, const unsigned char *salt);
-void reducedSqueezeRowSSE(__m128i* state, __m128i* row);
-void reducedDuplexRowSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);
-void reducedDuplexRowSetupSSE(__m128i *state, __m128i *rowIn, __m128i *rowInOut, __m128i *rowOut);*/
-
 void printArray(unsigned char *array, unsigned int size, char *name);
 
 #endif /* SPONGE_H_ */

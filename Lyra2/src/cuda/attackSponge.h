@@ -1,10 +1,10 @@
 /**
- * Header file for Blake2b's and BlaMka's internal permutation in the form of a sponge. 
- * This code is based on the original Blake2b's implementation provided by 
+ * Header file for Blake2b's and BlaMka's internal permutation in the form of a sponge.
+ * This code is based on the original Blake2b's implementation provided by
  * Samuel Neves (https://blake2.net/)
- * 
+ *
  * Author: The Lyra PHC team (http://www.lyra2.net/) -- 2015.
- * 
+ *
  * This software is hereby placed in the public domain.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ''AS IS'' AND ANY EXPRESS
@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+typedef unsigned char byte;
+
 #if defined(__GNUC__)
 #define ALIGN __attribute__ ((aligned(32)))
 #elif defined(_MSC_VER)
@@ -36,12 +38,15 @@
 #define BLOCK_LEN_BLAKE2_SAFE_INT64 8                                   //512 bits (=64 bytes, =8 uint64_t)
 #define BLOCK_LEN_BLAKE2_SAFE_BYTES (BLOCK_LEN_BLAKE2_SAFE_INT64 * 8)   //same as above, in bytes
 
-//default block length: 768 bits
-#ifndef BLOCK_LEN_INT64             
+//default block lenght: 768 bits
+#ifndef BLOCK_LEN_INT64
         #define BLOCK_LEN_INT64 12                                      //Block length: 768 bits (=96 bytes, =12 uint64_t)
 #endif
 
 #define BLOCK_LEN_BYTES (BLOCK_LEN_INT64 * 8)                           //Block length, in bytes
+
+#define STATESIZE_INT64 16
+#define STATESIZE_BYTES (16 * sizeof (uint64_t))
 
 #ifndef SPONGE
         #define SPONGE 0                                                //SPONGE 0 = BLAKE2, SPONGE 1 = BLAMKA and SPONGE 2 = HALF-ROUND BLAMKA
@@ -52,7 +57,7 @@
 #endif
 
 /*Blake2b IV Array*/
-static const uint64_t blake2b_IV[8] =
+__device__ static const uint64_t blake2b_IV[8] =
 {
   0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
   0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
@@ -61,21 +66,21 @@ static const uint64_t blake2b_IV[8] =
 };
 
 /*Blake2b's rotation*/
-static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
+__device__ static inline uint64_t rotr64( const uint64_t w, const unsigned c ){
     return ( w >> c ) | ( w << ( 64 - c ) );
 }
 
 /*Main change compared with Blake2b*/
-static inline uint64_t fBlaMka(uint64_t x, uint64_t y){
+__device__ static inline uint64_t fBlaMka(uint64_t x, uint64_t y){
     uint32_t lessX = (uint32_t) x;
     uint32_t lessY = (uint32_t) y;
-    
+
     uint64_t lessZ = (uint64_t) lessX;
     lessZ = lessZ * lessY;
     lessZ = lessZ << 1;
-    
+
     uint64_t z = lessZ + x + y;
-    
+
     return z;
 }
 
@@ -140,22 +145,25 @@ static inline uint64_t fBlaMka(uint64_t x, uint64_t y){
     GBLAMKA(r,3,v[ 3],v[ 7],v[11],v[15]); \
     DIAGONALIZE(r,v);
 
+//---- Initialization
+__global__ void bootStrapGPU(uint64_t * memMatrixGPU, unsigned char * pkeysGPU, unsigned int kLen, unsigned char *pwdGPU, unsigned int pwdlen, unsigned char *saltGPU, unsigned int saltlen, unsigned int timeCost, unsigned int nRows, unsigned int nCols, uint64_t nBlocksInput, unsigned int totalPasswords);
+
 //---- Housekeeping
-void initState(uint64_t state[/*16*/]);
+__global__ void initState(uint64_t state[/*16*/], unsigned int totalPasswords);
 
 //---- Squeezes
-void squeeze(uint64_t *state, unsigned char *out, unsigned int len);
-void reducedSqueezeRow0(uint64_t* state, uint64_t* rowOut);
+__global__ void reducedSqueezeRow0(uint64_t* row, uint64_t* state, unsigned int totalPasswords);
+__global__ void squeeze(uint64_t *state, byte *out, unsigned int len, unsigned int totalPasswords);
 
 //---- Absorbs
-void absorbColumn(uint64_t *state, uint64_t *in);
-void absorbBlockBlake2Safe(uint64_t *state, const uint64_t *in);
+__global__ void absorbInput(uint64_t * memMatrixGPU, uint64_t * stateThreadGPU, uint64_t *stateIdxGPU, uint64_t nBlocksInput, unsigned int totalPasswords);
 
 //---- Duplexes
-void reducedDuplexRow1and2(uint64_t *state, uint64_t *rowIn, uint64_t *rowOut);
-void reducedDuplexRowFilling(uint64_t *state, uint64_t *rowInOut, uint64_t *rowIn0, uint64_t *rowIn1, uint64_t *rowOut);
-void reducedDuplexRowWandering(uint64_t *state, uint64_t *rowInOut0, uint64_t *rowInOut1, uint64_t *rowIn0, uint64_t *rowIn1);
-void reducedDuplexRowWanderingParallel(uint64_t *state, uint64_t *rowInOut0, uint64_t *rowInP, uint64_t *rowIn0);
+__global__ void reducedDuplexRow1and2(uint64_t *rowIn, uint64_t *state, unsigned int totalPasswords, int first, int second);
+
+//---- Setup and Wandering
+__global__ void setupPhaseWanderingGPU(uint64_t * memMatrixGPU, uint64_t * stateThreadGPU, uint64_t sizeSlice, unsigned int totalPasswords, unsigned int timeCost);
+__global__ void setupPhaseWanderingGPU_P1(uint64_t * memMatrixGPU, uint64_t * stateThreadGPU, uint64_t sizeSlice, unsigned int totalPasswords, unsigned int timeCost);
 
 //---- Misc
 void printArray(unsigned char *array, unsigned int size, char *name);
