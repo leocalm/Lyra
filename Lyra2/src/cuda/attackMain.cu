@@ -3,6 +3,7 @@
  * This is a specific implementation, used only to start
  * evaluating GPU attacks. This implementation needs improvement
  * in specific GPU optimization technics.
+ * Implemented with RHO=1, only.
  *
  * Author: The Lyra PHC team (http://www.lyra2.net/) -- 2015.
  *
@@ -26,7 +27,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
-
 #include "attackLyra2.h"
 #include "attackSponge.h"
 
@@ -47,104 +47,109 @@
 void multPasswordCUDA(unsigned int t_cost, unsigned int m_cost, unsigned int totalPasswords, unsigned int gridSize, unsigned int blockSize, unsigned int printKeys) {
     //=================== Basic variables, with default values =======================//
     int kLen = 32;
-    unsigned char *ptrChar;
+	unsigned char *ptrChar;
     int pwdLen = 10;
     int saltLen = 10;
     int i, j;
-    int result;
+	int result;
     //==========================================================================/
 
-    if (m_cost / nPARALLEL < 4) {
-        printf("Number of rows too small\n");
-        exit(0);
-    }
+	if (m_cost/nPARALLEL < 4) {
+		printf("Number of rows too small\n");
+		exit(0);
+	}
 
-    size_t sizeMemMatrix = (size_t) ((size_t) m_cost * (size_t) ROW_LEN_BYTES);
+	size_t sizeMemMatrix = (size_t) ((size_t)m_cost * (size_t)ROW_LEN_BYTES);
 
-    printf("Total time cost: %d \n", t_cost);
-    printf("Total number of rows: %d \n", m_cost);
-    printf("Total number of cols: %d \n", N_COLS);
-    char *spongeName = "";
-    if (SPONGE == 0) {
+	printf("Total time cost: %d \n", t_cost);
+	printf("Total number of rows: %d \n", m_cost);
+	printf("Total number of cols: %d \n", N_COLS);
+    char *spongeName ="";
+    if (SPONGE==0){
         spongeName = "Blake2";
-    } else if (SPONGE == 1) {
+    }
+    else{
         spongeName = "BlaMka";
-    } else {
-        spongeName = "half-round BlaMka";
     }
     printf("Sponge: %s\n", spongeName);
-    printf("Total number of password: %d \n", totalPasswords);
-    printf("Password length: %d \n", pwdLen);
-    printf("Parallelism inside password derivation: %d \n", nPARALLEL);
-    printf("Grid Size (blocks): %d\n", gridSize);
-    printf("Block Size (threads): %d\n", blockSize);
-    printf("BlockSize x GridSize (threads): %d\n", gridSize * blockSize);
-    printf("Total number of threads: %d \n", nPARALLEL * totalPasswords);
-    printf("Memory per password: %ld bytes (%ld MB)\n", (long int) sizeMemMatrix, (long int) (sizeMemMatrix) / (1024 * 1024));
-    printf("Total Memory: %ld bytes (%ld MB)\n", (long int) sizeMemMatrix * totalPasswords, (long int) (sizeMemMatrix * totalPasswords) / (1024 * 1024));
-    fflush(stdout);
+	printf("Total number of password: %d \n", totalPasswords);
+	printf("Password length: %d \n", pwdLen);
+	printf("Parallelism inside password derivation: %d \n", nPARALLEL);
+	printf("Grid Size (blocks): %d\n", gridSize);
+	printf("Block Size (threads): %d\n", blockSize);
+	printf("BlockSize x GridSize (threads): %d\n", gridSize*blockSize);
+	printf("Total number of threads: %d \n", nPARALLEL*totalPasswords);
+    printf("Memory per password: %ld bytes (%ld MB)\n", (long int)sizeMemMatrix, (long int)(sizeMemMatrix)/(1024*1024));
+	printf("Total Memory: %ld bytes (%ld MB)\n", (long int)sizeMemMatrix * totalPasswords, (long int)(sizeMemMatrix * totalPasswords)/(1024*1024));
+	fflush(stdout);
 
-    // All Keys:
-    unsigned char *K = (unsigned char *) malloc(totalPasswords * kLen * sizeof (unsigned char));
+	// All Keys:
+	unsigned char *K = (unsigned char *)malloc(totalPasswords * kLen * sizeof(unsigned char));
 
-    //Pointer to each passwords in the Matrix:
-    unsigned char **passwords = (unsigned char **) malloc(totalPasswords * sizeof (unsigned char *));
-    if (passwords == NULL) {
+	//Pointer to each passwords in the Matrix:
+	unsigned char **passwords = (unsigned char **)malloc(totalPasswords * sizeof (unsigned char *));
+	    if (passwords == NULL) {
         printf("Memory allocation error in file: %s and line: %d\n", __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
     }
 
-    //Matrix with all passwords:
-    unsigned char *passwdMatrix = (unsigned char *) malloc(totalPasswords * pwdLen * sizeof (unsigned char));
-    if (passwdMatrix == NULL) {
+	//Matrix with all passwords:
+	unsigned char *passwdMatrix = (unsigned char *)malloc(totalPasswords * pwdLen * sizeof (unsigned char));
+	if (passwdMatrix == NULL) {
         printf("Memory allocation error in file: %s and line: %d\n", __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
     }
 
-    //Pointer to each salt in the Matrix:
-    unsigned char **salts = (unsigned char **) malloc(totalPasswords * sizeof (unsigned char *));
-    if (salts == NULL) {
+	//Pointer to each salt in the Matrix:
+	unsigned char **salts = (unsigned char **)malloc(totalPasswords * sizeof (unsigned char *));
+	    if (salts == NULL) {
         printf("Memory allocation error in file: %s and line: %d\n", __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
     }
 
-    //Matrix with all salts:
-    unsigned char *saltMatrix = (unsigned char *) malloc(totalPasswords * saltLen * sizeof (unsigned char));
-    if (saltMatrix == NULL) {
+	//Matrix with all salts:
+	unsigned char *saltMatrix = (unsigned char *)malloc(totalPasswords * saltLen * sizeof (unsigned char));
+	if (saltMatrix == NULL) {
         printf("Memory allocation error in file: %s and line: %d\n", __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
     }
 
-    //Places the pointers in the correct positions
-    ptrChar = passwdMatrix;
-    for (i = 0; i < totalPasswords; i++) {
-        passwords[i] = ptrChar;
-        ptrChar += pwdLen; // pwdLen * sizeof (unsigned char);
-    }
+	//Places the pointers in the correct positions
+	ptrChar = passwdMatrix;
+	for (i = 0; i < totalPasswords; i++) {
+		passwords[i] = ptrChar;
+		ptrChar += pwdLen; // pwdLen * sizeof (unsigned char);
+	}
 
-    //Places the pointers in the correct positions
-    ptrChar = saltMatrix;
-    for (i = 0; i < totalPasswords; i++) {
-        salts[i] = ptrChar;
-        ptrChar += saltLen; // pwdLen * sizeof (unsigned char);
-    }
+	//Places the pointers in the correct positions
+	ptrChar = saltMatrix;
+	for (i = 0; i < totalPasswords; i++) {
+		salts[i] = ptrChar;
+		ptrChar += saltLen; // pwdLen * sizeof (unsigned char);
+	}
 
-    //fills passwords
-    for (i = 0; i < totalPasswords; i++) {
-        for (j = 0; j < pwdLen; j++) {
-            //Different passwords
-            //passwords[i][j] = (j+i*pwdLen)%255;
-            //Same password
-            passwords[i][j] = (0x30 + j);
-        }
-    }
 
-    //fills salts
-    for (i = 0; i < totalPasswords; i++) {
-        for (j = 0; j < saltLen; j++) {
-            salts[i][j] = (0x30 + j);
-        }
-    }
+#ifndef SAMEPASSWORD
+	#define SAMEPASSWORD 0
+#endif
+	//fills passwords
+	for (i = 0; i < totalPasswords; i++) {
+		for (j = 0; j < pwdLen; j++) {
+#if SAMEPASSWORD == 1
+			//Same password:
+			passwords[i][j] = (0x30+j);
+#else
+			//Different passwords:
+			passwords[i][j] = (j+i*pwdLen)%255;
+#endif
+		}
+	}
+	// fills salts
+	for (i = 0; i < totalPasswords; i++) {
+		for (j = 0; j < saltLen; j++) {
+			salts[i][j] = (0x30+j);
+		}
+	}
 
 /*
 	printf("Number of Passwords: %d\n", totalPasswords);
@@ -165,64 +170,67 @@ void multPasswordCUDA(unsigned int t_cost, unsigned int m_cost, unsigned int tot
 		}
 		printf("\n");
 	}
-*/	
-	
+*/
+
+
 #if (BENCH == 1)
     struct timeval start;
     struct timeval end;
     gettimeofday(&start, NULL);
 #endif
 
-    //Calls the interface to the GPU program
+	//Calls the interface to the GPU program
     result = gpuMult(K, kLen, passwords, pwdLen, salts, saltLen, t_cost, m_cost, N_COLS, totalPasswords, gridSize, blockSize);
 
 #if (BENCH == 1)
     gettimeofday(&end, NULL);
     unsigned long elapsed = (end.tv_sec-start.tv_sec)*1000000 + end.tv_usec-start.tv_usec;
+
 #endif
-    if (result >= 0) {
-        //Prints returned keys
-        if (printKeys == 1) {
-            printf("Result of %d Keys:\n", totalPasswords);
-            for (i = 0; i < totalPasswords; i++) {
-                printf("Key #: %3d: ", i);
-                for (j = 0; j < kLen; j++) {
-                    printf("%2x|", K[i * kLen + j]);
-                }
-                printf("\n");
-            }
-        }
-    }
-    
+	if (result >= 0){
+		//Prints returned keys
+		if (printKeys == 1) {
+			printf("Result of %d Keys:\n", totalPasswords);
+			for (i = 0; i < totalPasswords; i++) {
+				printf("Key #: %3d: ", i);
+				for (j = 0; j < kLen; j++) {
+					printf("%2x|", K[i*kLen + j]);
+				}
+				printf("\n");
+			}
+		}
+	}
 #if (BENCH == 1)
-    if (result < 0) {
-        printf("Execution Error!!!\n");
-    } else {
-        printf("Execution Time: %lu us (%.3f ms, %.3f seg)\n", elapsed, (float) elapsed / 1000, (float) elapsed / (1000 * 1000));
-        printf("Execution Time per password: %.3f us (%.3f ms, %.3f seg)\n", (float) ((float) elapsed / totalPasswords), (float) (((float) elapsed / totalPasswords) / 1000), (float) (((float) elapsed / totalPasswords) / (1000 * 1000)));
-    }
+
+	if (result < 0) {
+		printf("Execution Error!!!\n");
+	} else {
+		printf("Execution Time: %lu us (%.3f ms, %.3f seg)\n", elapsed, (float)elapsed/1000, (float)elapsed/(1000*1000));
+		printf("Execution Time per password: %.3f us (%.3f ms, %.3f seg)\n", (float)((float)elapsed/totalPasswords), (float)(((float)elapsed/totalPasswords)/1000), (float)(((float)elapsed/totalPasswords)/(1000*1000)));
+	}
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
 #endif
-    
-    cudaDeviceReset();
-    free(passwords);
-    free(passwdMatrix);
-    free(saltMatrix);
-    free(salts);
-    free(K);
+
+	cudaDeviceReset();
+	free(passwords);
+	free(passwdMatrix);
+	free(saltMatrix);
+	free(salts);
+	free(K);
 }
 
 
 int main(int argc, char *argv[]) {
+
     //=================== Basic variables, with default values =======================//
     unsigned int t_cost = 0;
     unsigned int m_cost = 0;
-    unsigned int gridSize;
-    unsigned int blockSize;
-    unsigned int numberPasswds;
+	unsigned int gridSize;
+	unsigned int blockSize;
+	unsigned int numberPasswds;
     //==========================================================================/
 
-    //	Defines in which GPU will execute
+	//	Defines in which GPU will execute
     cudaSetDevice(0);
 
     switch (argc) {
