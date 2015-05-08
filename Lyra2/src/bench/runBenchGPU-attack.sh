@@ -35,7 +35,7 @@ do
 	do
 		let totalBlocksToUse=passwords*parallelism/threadsPerBlock
                 echo "CODE = T"$t"-COL"$cols"-ROW"$rows"-PAS"$passwords"-BLK"$totalBlocksToUse"-PAR"$parallelism"-TH"$threadsPerBlock"-MEM"$memory
-                ../bin/Lyra2CUDA-attack $t $rows --multPasswordCUDA $passwords $totalBlocksToUse $threadsPerBlock
+                ../bin/Lyra2CUDAttack $t $rows --multPasswordCUDA $passwords $totalBlocksToUse $threadsPerBlock
 		let passwords=passwords+passwordStep
 	done
 	let passwords=passwordStep
