@@ -94,24 +94,24 @@ These parameters is not mandatory, but to give a idea to the legitimate users.
 
 ### Old computers *(i.e., Intel core 2 duo or older)*
 * **Large amount of RAM:** *(~ 600 MB)*
-   * * **Without parallelism:** * tCost = 1; nRows = 49152; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Without parallelism:** tCost = 1; nRows = 49152; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
 
 * **Medium amount of RAM:** *(~ 200 MB)*
-   * * **Without parallelism:** * tCost = 4; nRows = 16384; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Without parallelism:** tCost = 4; nRows = 16384; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
 
 * **Small amount of RAM:** *(~ 100 MB)*
-   * * **Without parallelism:** * tCost = 8; nRows = 8192; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Without parallelism:** tCost = 8; nRows = 8192; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
 
 
 ### Modern computers *(i.e., Intel i5 or newer)*
 * **Large amount of RAM:** *(~1.2 GB)*
-   * * **Without parallelism :** * tCost = 1; nRows = 49152; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
-   * * **Wit parallelism (Lyra2p)** *: tCost = 3; nRows = 49152; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Without parallelism :** tCost = 1; nRows = 49152; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Wit parallelism (Lyra2p):** tCost = 3; nRows = 49152; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
 
 * **Medium amount of RAM:** *(~400 MB)*
-   * * **Without parallelism:** * tCost = 5; nRows = 16384; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
-   * * **Wit parallelism (Lyra2p)** *: tCost = 13; nRows = 16384; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Without parallelism:** tCost = 5; nRows = 16384; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Wit parallelism (Lyra2p):** tCost = 13; nRows = 16384; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
 
 * **Small amount of RAM:** *(~ 100 MB)*
-   * * **Without parallelism:** * tCost = 21; nRows = 4096; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
-   * * **Wit parallelism (Lyra2p)** *: tCost = 47; nRows = 4096; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Without parallelism:** tCost = 21; nRows = 4096; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * **Wit parallelism (Lyra2p):** tCost = 47; nRows = 4096; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
