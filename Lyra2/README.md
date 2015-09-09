@@ -1,4 +1,3 @@
--------------------------------------------------------------------------------------------
 # Introduction of Lyra2
 -------------------------------------------------------------------------------------------
 
@@ -19,11 +18,11 @@ of this and other existing schemes.
 For more information, we recommend reading the Reference Guide (./Lyra2ReferenceGuide.pdf)
 that is part of this package.
 
--------------------------------------------------------------------------------------------
+
 ## Overview of this package
 -------------------------------------------------------------------------------------------
 
-####	./README.txt
+####	./README.md
 
 This file.
 
@@ -40,6 +39,8 @@ Contains the Makefile and the reference implementation (i.e., without optimizati
 
 Files that can be used to replicate the benchmarks shown in the Reference Guide.
 
+> Obs.: This benchmark takes around 40 minutes in a modern computer (and more than three hours in old computers, equipped without multicore processors)!
+
 ####	./src/cuda
 
 CUDA implementations, both for attacks (i.e., many password tests performed in parallel) 
@@ -51,37 +52,66 @@ Optimized implementation (i.e., SSE-oriented implementation). We note that, albe
 optimizations were included in the code, there may still be further optimizations to be 
 explored.
 
--------------------------------------------------------------------------------------------
 ## Building
 -------------------------------------------------------------------------------------------
 
 
 ### Build Requirements
 ------------------------------------------------
-	make
-	gcc     (tested with version 4.9.2 and 4.6.2)
- 	openmp  (distribuited with gcc)
-	cuda    (tested with driver version 6.5 and runtime version 5.0)
+* *make*
+* *gcc     (tested with version 4.9.2 and 4.6.2)*
+* *openmp  (distribuited with gcc)*
+* *cuda    (tested with driver version 6.5 and runtime version 5.0)*
 
 ### Compile
 ------------------------------------------------
 
-To build Lyra2, type:
-      make **OPTION** [**PARAMETERS**]()
+    To build Lyra2, type:
+          make OPTION [PARAMETERS]
+     
+    where OPTION can be one of the following:
+          generic-x86-64                      For x86-64 Unix-like system, with gcc or similar
+          linux-x86-64-sse                    Linux x86-64, with SSE 
+          cygwin-x86-64                       Windows x86-64, Cygwin
+          cygwin-x86-64-sse                   Windows x86-64, Cygwin, with SSE
+          linux-x86-64-cuda                   Linux x86-64, with CUDA 
+          linux-x86-64-cuda-attack            Linux x86-64, attack using CUDA
  
-where **OPTION** can be one of the following:
-generic-x86-64                      For x86-64 Unix-like system, with gcc or similar
-linux-x86-64-sse                    Linux x86-64, with SSE 
-cygwin-x86-64                       Windows x86-64, Cygwin
-cygwin-x86-64-sse                   Windows x86-64, Cygwin, with SSE
-linux-x86-64-cuda                   Linux x86-64, with CUDA 
-linux-x86-64-cuda-attack            Linux x86-64, attack using CUDA
- 
-where **PARAMETERS** can be:
-      nCols = (number of columns)
-      nThreads = (number of threads)
-      nRoundsSponge = (number of Rounds performed for reduced sponge function [1 - 12]())
-      bSponge = (number of sponge blocks, bitrate, 8 or 10 or 12)
-      sponge = (0, 1 or 2) 0 means Blake2b, 1 means BlaMka and 2 means half-round BlaMka
- 
+    where PARAMETERS can be:
+          nCols = (number of columns)
+          nThreads = (number of threads)
+          nRoundsSponge = (number of Rounds performed for reduced sponge function [1 - 12])
+          bSponge = (number of sponge blocks, bitrate, 8 or 10 or 12)
+          sponge = (0, 1 or 2) 0 means Blake2b, 1 means BlaMka and 2 means half-round BlaMka
+
+
+## Recommended Parameters 
 -------------------------------------------------------------------------------------------
+
+These parameters is not mandatory, but to give a idea to the legitimate users.
+
+> Normally, with these parameters, Lyra2 will spend just a second to derive a key.
+
+### Old computers *(i.e., Intel core 2 duo or older)*
+* **Large amount of RAM:** *(~ 600 MB)*
+   * * **Without parallelism:** * tCost = 1; nRows = 49152; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+
+* **Medium amount of RAM:** *(~ 200 MB)*
+   * * **Without parallelism:** * tCost = 4; nRows = 16384; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+
+* **Small amount of RAM:** *(~ 100 MB)*
+   * * **Without parallelism:** * tCost = 8; nRows = 8192; nCols = 128; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+
+
+### Modern computers *(i.e., Intel i5 or newer)*
+* **Large amount of RAM:** *(~1.2 GB)*
+   * * **Without parallelism :** * tCost = 1; nRows = 49152; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * * **Wit parallelism (Lyra2p)** *: tCost = 3; nRows = 49152; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+
+* **Medium amount of RAM:** *(~400 MB)*
+   * * **Without parallelism:** * tCost = 5; nRows = 16384; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * * **Wit parallelism (Lyra2p)** *: tCost = 13; nRows = 16384; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+
+* **Small amount of RAM:** *(~ 100 MB)*
+   * * **Without parallelism:** * tCost = 21; nRows = 4096; nCols = 256; nThreads = 1; nRoundsSponge = 1; bSponge = 12; sponge = 0;
+   * * **Wit parallelism (Lyra2p)** *: tCost = 47; nRows = 4096; nCols = 256; nThreads = 2; nRoundsSponge = 1; bSponge = 12; sponge = 0;
