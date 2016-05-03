@@ -19,7 +19,7 @@ nCols=256
 nThreads=2
 nRoundsSponge=1
 bSponge=12
-sponge=0
+sponge=1
 bench=0
 
 parameters=-DN_COLS=$(nCols)  -DnPARALLEL=$(nThreads) -DRHO=$(nRoundsSponge) -DBLOCK_LEN_INT64=$(bSponge) -DSPONGE=$(sponge) -DBENCH=$(bench)
@@ -48,7 +48,7 @@ default:
 	@echo "      nThreads = (number of threads, default is 2)"
 	@echo "      nRoundsSponge = (number of Rounds performed for reduced sponge function [1 - 12], default is 1)"
 	@echo "      bSponge = (number of sponge blocks, bitrate, 8 or 10 or 12, default is 12)"
-	@echo "      sponge = (0, 1 or 2, default is 0) 0 means Blake2b, 1 means BlaMka and 2 means half-round BlaMka"
+	@echo "      sponge = (0, 1 or 2, default is 1) 0 means Blake2b, 1 means BlaMka and 2 means half-round BlaMka"
 	@echo " "
 	@echo "Notes:"
 	@echo "Lyra2 was tested with nCols=16, 32, 64, 96, 128, 256, 512, 1024 and 2046"
