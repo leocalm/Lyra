@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A layout example that shows off a responsive product landing page.">
+    <title>Lyra 2</title>
+
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/grids-min.css">
+    <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/tables-min.css">
+
+    <!--[if lte IE 8]>
+      <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/grids-responsive-old-ie-min.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+      <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/grids-responsive-min.css">
+    <!--<![endif]-->
+
+    <!--[if lte IE 8]>
+        <link rel="stylesheet" href="css/layouts/marketing-old-ie.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+        <link rel="stylesheet" href="css/layouts/marketing.css">
+    <!--<![endif]-->
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/waypoints.js"></script>
+    <script src="js/jquery.easing.1.3.js"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="home-menu pure-menu pure-menu-open pure-menu-horizontal pure-menu-fixed">
+        <a class="pure-menu-heading">Lyra & Lyra2</a>
+        <ul>
+            <li class="home pure-menu-selected"><a>Home</a></li>
+            <li class="features"><a>Main Features</a></li>
+            <li class="publications"><a>Publications</a></li>
+            <li class="authors"><a>Authors</a></li>
+            <li class="documents"><a>Downloads</a></li>
+            <li class="links"><a>Links</a></li>
+        </ul>
+    </div>
+  </div>
+  <section id="home">
+    <div class="splash-container">
+      <div class="splash">
+        <h1 class="splash-head">Lyra & Lyra2</h1>
+        <p class="splash-subhead">
+            Password Key Derivation Based On The Sponge Construction
+        </p>
+      </div>
+    </div>
+  </section>
+  <div class="content-wrapper">
+    <section id="features">
+      <div class="content">
+        <h2 class="content-head is-center">Main Features</h2>
+        <div class="pure-g">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
+            <h3 class="content-subhead">
+              <i class="fa fa-lock"></i>
+              High Security
+            </h3>
+            <p>
+              Designed to be strictly sequential (i.e., not easily parallelizable), providing strong security even against attackers that uses multiple processing cores (e.g., custom hardware or a powerful GPU)
+            </p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
+            <h3 class="content-subhead">
+              <i class="fa fa-check"></i>
+              Simplicity
+            </h3>
+            <p>
+              Easy to understand and implement in software, allowing it to be implemented in multiple platforms
+            </p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
+            <h3 class="content-subhead">
+              <i class="fa fa-gears"></i>
+              Parametrization
+            </h3>
+            <p>
+              Legitimate users are allowed to fine tune the memory and processing costs according to the desired level of security against brute force passwordguessing
+            </p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
+            <h3 class="content-subhead">
+              <i class="fa fa-wrench"></i>
+              Based on the Sponge Construction
+            </h3>
+            <p>
+              Built on the properties of sponge functions operating in a stateful mode, creating a strictly sequental process
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="publications">
+      <div class="content">
+        <h2 class="content-head is-center">Academic Papers</h2>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-2">
+            <p><a class="pure-button pure-button-link" href="http://link.springer.com/journal/13389"><i class="fa fa-file-text-o"></i> Lyra</a></p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-2">
+            <p><a class="pure-button pure-button-link" href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7377075"><i class="fa fa-file-text-o"></i> Lyra2</a></p>
+          </div>
+        </div>        
+        <h2 class="content-head is-center">Misc</h2>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-2">
+            <p><a class="pure-button pure-button-link" href="dissertacao-v2.pdf"><i class="fa fa-book"></i> Leonardo's Dissertation</a></p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-2">
+            <p><a class="pure-button pure-button-link" href="Lyra2-thesis.pdf"><i class="fa fa-book"></i> Ewerton's Thesis</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="authors">
+      <div class="ribbon l-box-lrg">
+        <h2 class="content-head is-center">Authors</h2>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-5"><p>Marcos A. Simplicio Jr.</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-5"><p>Leonardo C. Almeida</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-5"><p>Ewerton R. Andrade</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-5"><p>Paulo C. F. dos Santos</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-5"><p>Paulo S. L. M. Barreto</p></div>
+        </div>
+        <h3 class="content-head is-center">Colaborators</h3>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4"><p>Marco Dimas Gubitoso</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4"><p>Pedro Maat Costa Massolino</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4"><p>Sami Farin</p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4"><p>Dmitry Khovratovich</p></div>
+        </div>
+      </div>
+    </section>
+    <section id="documents">
+      <div class="content">
+        <h2 class="content-head is-center">Implementation</h2>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-2">
+            <p><a class="pure-button pure-button-link" href="https://github.com/leocalm/Lyra/archive/master.zip"><i class="fa fa-code"></i> Source Code</a></p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-2">
+            <p><a class="pure-button pure-button-link" href="https://github.com/leocalm/Lyra/"><i class="fa fa-github"></i> GitHub</a></p>
+          </div>
+        <h2 class="content-head is-center">Documents and Specification</h2>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-3">
+            <p><a class="pure-button pure-button-link" href="http://eprint.iacr.org/2014/030"><i class="fa fa-book"></i> Lyra Specification</a></p>
+          </div>
+		      <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-3">
+            <p><a class="pure-button pure-button-link" href="http://eprint.iacr.org/2015/136"><i class="fa fa-book"></i> Lyra2 Specification</a></p>
+          </div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-3">
+            <p><a class="pure-button pure-button-link" href="Presentation.pdf"><i class="fa fa-info-circle"></i> Lyra's Presentation</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="links">
+      <div class="ribbon l-box-lrg">
+        <h2 class="content-head is-center">Links</h2>
+        <div class="pure-g is-center">
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-3"><p><a class="links" href="http://sponge.noekeon.org/">The Sponge Functions Corner</a></p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-3"><p><a class="links" href="http://keccak.noekeon.org/">The Keccak sponge function family</a></p></div>
+          <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-3"><p><a class="links" href="https://blake2.net/">Blake 2</a></p></div>
+        </div>
+      </div>
+    </section>
+    <div class="footer l-box is-center">
+        We hereby declare that Lyra and Lyra2 are and will remain available worldwide on a royalty free basis, and that we are unaware of any patent or patent application that covers the use or implementation of these algorithms.
+    </div>
+  </div>
+
+<script>
+  htmlbody = $('html,body');
+
+  $(".header li").click(function(){
+    $(".header li").removeClass("pure-menu-selected");
+    $(".header li:eq("+$(this).index()+")").addClass("pure-menu-selected");
+    scrollToLink($(this).attr('class').split(" ")[0]);
+  });
+
+  $('#features').waypoint(function() {
+    $(".header li").removeClass("pure-menu-selected");
+    $(".header li:eq(1)").addClass("pure-menu-selected");
+  });
+
+  $('#home').waypoint(function() {
+    $(".header li").removeClass("pure-menu-selected");
+    $(".header li:eq(0)").addClass("pure-menu-selected");
+  }, { offset: -100 });
+
+  $('#authors').waypoint(function() {
+    $(".header li").removeClass("pure-menu-selected");
+    $(".header li:eq(2)").addClass("pure-menu-selected");
+  });
+
+  $('#documents').waypoint(function() {
+    $(".header li").removeClass("pure-menu-selected");
+    $(".header li:eq(3)").addClass("pure-menu-selected");
+  }, { offset: 100 });
+
+  $('#links').waypoint(function() {
+    $(".header li").removeClass("pure-menu-selected");
+    $(".header li:eq(4)").addClass("pure-menu-selected");
+  });
+
+  $(document).ready(function() {
+    jQuery.easing.def = 'easeOutBounce';
+  });
+
+
+  function scrollToLink(styleClass) {
+    sec = '#' + styleClass;
+    htmlbody.animate({scrollTop: $(sec).offset().top}, 2000, 'easeInOutQuint');
+  }
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46907124-4', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
