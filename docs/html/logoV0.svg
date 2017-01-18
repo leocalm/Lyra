@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="Novo documento 1">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.73601"
+     inkscape:cx="388.58212"
+     inkscape:cy="939.55813"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="1056"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Camada 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-size:34.88103104px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="122.39967"
+       y="216.46669"
+       id="text3011"
+       sodipodi:linespacing="125%"
+       transform="scale(0.98822353,1.0119168)"><tspan
+         sodipodi:role="line"
+         id="tspan3013"
+         x="122.39967"
+         y="216.46669"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Webdings;-inkscape-font-specification:Webdings Bold">Password Key Derivation</tspan></text>
+    <path
+       style="fill:#000069;fill-opacity:1;stroke:none"
+       d="m 234.17362,137.75159 -65.8345,0 0,-92.831681 -47.11047,0.43134 0,137.817481 93.44243,-0.43134 z"
+       id="path3033-0"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccc" />
+    <path
+       style="fill:#6565ff;fill-opacity:1;stroke:none"
+       d="m 176.45945,44.919909 57.26915,92.831681 -30.2806,44.9858 59.42863,0 92.03825,-137.817481 -55.07657,0 -31.73732,44.9858 -26.97673,-44.9858 z"
+       id="path3063"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccccc" />
+    <a
+       id="a3105"
+       style="fill:#000068;fill-opacity:1;stroke:none"
+       transform="translate(-162.70311,-348.49601)">
+      <path
+         sodipodi:nodetypes="ccccccccccccccc"
+         inkscape:connector-curvature="0"
+         id="path3033-0-7"
+         d="m 627.57941,450.46149 -86.8936,-57.04557 -44.82898,-0.27677 0,137.81748 44.36832,0.27677 0.0503,-15.06269 9.98639,15.06269 51.7459,0 -27.87478,-44.9858 53.574,-35.69873 -65.90367,-0.61725 -21.35271,13.84302 c 0.0305,-9.11172 0.061,-18.22345 0.0914,-27.33517 l 21.09881,13.72261 z"
+         style="fill:#000068;fill-opacity:1;stroke:none" />
+    </a>
+    <path
+       sodipodi:nodetypes="ccccc"
+       inkscape:connector-curvature="0"
+       id="path3971"
+       d="m 176.45945,44.919909 57.26915,92.831681 34.37239,-47.845881 -26.97673,-44.9858 z"
+       style="fill:#000068;fill-opacity:1;stroke:none" />
+    <path
+       style="fill:#000068;fill-opacity:1;stroke:none"
+       d="m 482.281,182.73739 28.16994,-45.48401 58.66106,86.69564 63.58608,0 L 511.24361,45.410719 415.99734,182.73739 z"
+       id="path3033"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccc" />
+  </g>
+</svg>
