@@ -6,7 +6,7 @@
 CC?=gcc
 NVCC=nvcc
 
-CFLAGS=-std=c99 -Wall -pedantic -O3 -msse2 -ftree-vectorizer-verbose=1 -fopenmp -funroll-loops -march=native -Ofast -mprefer-avx128 -flto -Wno-unused-variable
+CFLAGS=-std=c99 -Wall -pedantic -O3 -msse2 -ftree-vectorizer-verbose=1 -fopenmp -funroll-loops -march=native -Ofast -mprefer-avx128 -flto 
 
 BINDIR=../bin
 CUDADIR=cuda/
@@ -30,7 +30,6 @@ PTX = 35  # Must suits the GPU board used.
 SM = 35   # Must suits the GPU board used.
 
 default:
-	
 	@echo " "
 	@echo "To build Lyra2, type:"
 	@echo "      make OPTION [PARAMETERS]"
@@ -98,11 +97,9 @@ linux-x86-64-sse:	$(SSEDIR)Lyra2.c $(SSEDIR)Sponge.c Main.c $(SSEDIR)Lyra2.h $(S
 	mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $(SSEDIR)Sponge.c $(SSEDIR)Lyra2.c Main.c -o $(BIN) $(parameters)
 	@echo "Build completed, binaries in $(BIN)"
-	
 cygwin-x86-64:	    generic-x86-64
 
 cygwin-x86-64-sse:	linux-x86-64-sse
-	
 linux-x86-64-cuda:  $(CUDADIR)Lyra2.cu $(CUDADIR)Sponge.cu $(CUDADIR)Main.cu $(CUDADIR)Lyra2.h $(CUDADIR)Sponge.h $(makeTests)
 	mkdir -p $(BINDIR)
 	$(NVCC) $(CUDADIR)Lyra2.cu $(CUDADIR)Sponge.cu $(CUDADIR)Main.cu -O3 -o $(BINCUDA) -lcudart $(parameters)  -arch=compute_$(PTX)  -code=sm_$(SM)
@@ -112,7 +109,6 @@ linux-x86-64-cuda-attack:  $(CUDADIR)attackLyra2.cu $(CUDADIR)attackSponge.cu $(
 	mkdir -p $(BINDIR)
 	$(NVCC) $(CUDADIR)attackLyra2.cu $(CUDADIR)attackSponge.cu $(CUDADIR)attackMain.cu -O3 -o $(BINCUDATTACK) -lcudart $(parameters) -arch=compute_$(PTX)  -code=sm_$(SM)
 	@echo "Build completed, binaries in $(BINCUDATTACK)"
-	
 clean:
 	rm -rf *.o $(BIN) $(BINCUDA) $(BINDIR)
 
