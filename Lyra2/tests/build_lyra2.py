@@ -5,6 +5,14 @@ import subprocess
 
 from pathlib import Path
 
+class CompilerFlags:
+
+    def __init__(cflags=None):
+        self.cflags = {} if cflags is None else cflags
+
+    def __str__(self):
+        pass
+
 def build_lyra2(
         makefile=None, option=None, bindir=None, binname=None,
         nCols=256, nThreads=1, nRoundsSponge=1, bSponge=1, sponge=1, bench=0,
@@ -40,6 +48,8 @@ def build_lyra2(
         name = "lyra2-" + option
         name += "-cols-" + str(nCols)
         name += "-threads-" + str(nThreads)
+        name += "-nrounds-" + str(nRoundsSponge)
+        name += "-nblocks-" + str(bSponge)
         name += "-sponge-" + str(sponge)
 
         binname = bindir.joinpath(name)
@@ -65,8 +75,6 @@ def build_lyra2(
         "--directory", makefile.parent,
     ])
 
-    print(process.args)
-
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
@@ -77,7 +85,8 @@ if __name__ == "__main__":
         "option", default="generic-x86-64", choices=[
             "generic-x86-64", "linux-x86-64-sse",
             "cygwin-x86-64", "cygwin-x86-64-sse",
-            "linux-x86-64-cuda", "linux-x86-64-cuda-attack"
+            "linux-x86-64-cuda", "linux-x86-64-cuda-attack",
+            "clean"
         ], help="Compilation target for make"
     )
 
@@ -114,6 +123,11 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    if args.nthreads <= 0:
+        raise RuntimeError(
+            "--nthreads must be positive, was {}".format(args.nthreads)
+        )
 
     build_lyra2(
         option=args.option,
