@@ -50,7 +50,7 @@ default:
 	@echo "      sponge = (0, 1 or 2, default is 1) 0 means Blake2b, 1 means BlaMka and 2 means half-round BlaMka"
 	@echo " "
 	@echo "Notes:"
-	@echo "Lyra2 was tested with nCols=16, 32, 64, 96, 128, 256, 512, 1024 and 2046"
+	@echo "Lyra2 was tested with nCols=16, 32, 64, 96, 128, 256, 512, 1024 and 2048"
 	@echo "This implementation is known to have issues for large memory usage. The maximum tested memory usage was 1.6 GB "
 	@echo " "
 	@echo "***When using OpenMP 3.1, execute 'export GOMP_CPU_AFFINITY=0,2,4,6,1,3,5,7' to define affinity in parallel version of Lyra2! (verify computer architecture!!)***"
