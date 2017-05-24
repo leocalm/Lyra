@@ -13,7 +13,7 @@ class CompilerFlags:
     def __str__(self):
         pass
 
-def build_lyra2(
+def make_lyra2(
         makefile=None, option=None, bindir=None, binname=None,
         nCols=256, nThreads=1, nRoundsSponge=1, bSponge=1, sponge=1, bench=0,
         CFLAGS=None
@@ -24,7 +24,7 @@ def build_lyra2(
     The provided makefile has a number of variables that can be
     configured before the build (i.e. number of columns/number of
     threads, etc.) This script automates the process of building
-    various flavours of Lyra2 using that makefile.
+    various flavors of Lyra2 using that makefile.
 
     Documentation for many of the parameters can be found:
     1. Below in the if __name__ == '__main__' section
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             "--nthreads must be positive, was {}".format(args.nthreads)
         )
 
-    build_lyra2(
+    make_lyra2(
         option=args.option,
         nCols=args.mcost,
         nThreads=args.nthreads,

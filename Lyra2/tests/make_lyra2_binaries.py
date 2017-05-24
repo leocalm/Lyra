@@ -2,7 +2,7 @@
 
 from itertools import product
 
-from build_lyra2 import build_lyra2
+from make_lyra2 import make_lyra2
 
 if __name__ == "__main__":
     options  = ["generic-x86-64"]
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     for option, mcost, nthread, nround, nblock, sponge in product(
             options, mcosts, nthreads, nrounds, nblocks, sponges
     ):
-        build_lyra2(
+        make_lyra2(
             option=option,
             nCols=mcost,
             nThreads=nthread,
