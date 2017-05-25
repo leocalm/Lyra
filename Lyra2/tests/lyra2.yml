@@ -1,25 +1,27 @@
 build_path: ../build
 makefile_path: ../src/makefile
 
+
 matrix:
   option: generic-x86-64
+  threads: 1
   columns:
     - 16
     - 96
-    - 1024
-  threads: 1
+    # - 1024
   sponge:
-    - 0
-    - 1
-    - 2
+    - Blake2b
+    # - BlaMka
+    # - half-round BlaMka
   rounds:
     - 1
-    - 12
+    # - 12
   blocks:
     - 8
-    - 10
+    # - 10
     - 12
   bench: 0
+
 
 CFLAGS:
   - -std=c99
@@ -34,3 +36,48 @@ CFLAGS:
   - -Ofast
   - -mprefer-avx128
   - -flto
+
+
+valid:
+  option:
+    - generic-x86-64
+    - linux-x86-64-sse
+    - cygwin-x86-64
+    - cygwin-x86-64-sse
+    - linux-x86-64-cuda
+    - linux-x86-64-cuda-attack
+  threads: 1
+  columns:
+    - 16
+    - 32
+    - 64
+    - 96
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 2048
+  sponge:
+    - Blake2b
+    - BlaMka
+    - half-round BlaMka
+  rounds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+  blocks:
+    - 8
+    - 10
+    - 12
+  bench:
+    - True
+    - False
