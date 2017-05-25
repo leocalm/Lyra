@@ -8,9 +8,128 @@ import itertools
 
 from pathlib import Path
 
-
 def to_list(x):
     return x if isinstance(x, list) else [x]
+
+def valid_lyra2_params_or_exit(params):
+    try:
+        build_path = Path(params['build_path'])
+    except KeyError:
+        sys.exit('Please specify build_path')
+
+    try:
+        makefile_path = Path(params['makefile_path'])
+    except KeyError:
+        sys.exit('Please specify makefile_path')
+
+    try:
+        valid = params['valid']
+    except KeyError:
+        sys.exit('Please specify valid')
+
+    try:
+        matrix = params['matrix']
+    except KeyError:
+        sys.exit('Please specify build matrix')
+
+    try:
+        option = to_list(matrix['option'])
+    except KeyError:
+        sys.exit('Please specify matrix: option:')
+
+    try:
+        voptions = to_list(valid['option'])
+    except KeyError:
+        sys.exit('Please specify valid: option:')
+
+    for o in option:
+        if o not in voptions:
+            sys.exit('Option ' + o + ' is not valid')
+
+    try:
+        threads = to_list(matrix['threads'])
+    except KeyError:
+        sys.exit('Please specify matrix: threads:')
+
+    try:
+        vthreads = to_list(valid['threads'])
+    except KeyError:
+        sys.exit('Please specify valid: threads:')
+
+    for t in threads:
+        if t not in vthreads:
+            sys.exit('Thread ' + t + ' is not valid')
+
+    try:
+        columns = to_list(matrix['columns'])
+    except KeyError:
+        sys.exit('Please specify matrix: columns:')
+
+    try:
+        vcolumns = to_list(valid['columns'])
+    except KeyError:
+        sys.exit('Please specify valid: columns:')
+
+    for c in columns:
+        if c not in columns:
+            sys.exit('Columns ' + c + ' is not valid')
+
+    try:
+        sponge = to_list(matrix['sponge'])
+    except KeyError:
+        sys.exit('Please specify matrix: sponge:')
+
+    try:
+        vsponge = to_list(valid['sponge'])
+    except KeyError:
+        sys.exit('Please specify valid: sponge:')
+
+    for s in sponge:
+        if s not in vsponge:
+            sys.exit('Sponge ' + s + ' is not valid')
+
+    try:
+        rounds = to_list(matrix['rounds'])
+    except KeyError:
+        sys.exit('Please specify rounds')
+
+    try:
+        vrounds = to_list(valid['rounds'])
+    except KeyError:
+        sys.exit('Please specify valid: rounds:')
+
+    for r in rounds:
+        if r not in vrounds:
+            sys.exit('Rounds ' + r + ' is not valid')
+
+    try:
+        blocks = to_list(matrix['blocks'])
+    except KeyError:
+        sys.exit('Please specify blocks')
+
+    try:
+        vblocks = to_list(valid['blocks'])
+    except KeyError:
+        sys.exit('Please specify valid: blocks:')
+
+    for b in blocks:
+        if b not in vblocks:
+            sys.exit('Blocks ' + b + ' is not valid')
+
+    try:
+        bench = to_list(matrix['bench'])
+    except KeyError:
+        sys.exit('Please specify matrix: bench:')
+
+    try:
+        vbench = to_list(valid['bench'])
+    except KeyError:
+        sys.exit('Please specify valid: bench:')
+
+    for b in bench:
+        if b not in vbench:
+            sys.exit('Bench ' + b + ' is not valid')
+
 
 def make_lyra2(params):
     """
@@ -27,55 +146,25 @@ def make_lyra2(params):
     3. In the implementation reference .pdf
     """
 
-    try:
-        build_path = Path(params['build_path']).resolve()
-    except KeyError:
-        sys.exit('Please specify build_path')
+    valid_lyra2_params_or_exit(params)
 
-    try:
-        makefile_path = Path(params['makefile_path']).resolve()
-    except KeyError:
-        sys.exit('Please specify makefile_path')
+    path = Path(__file__).parent
 
-    try:
-        matrix = params['matrix']
-    except KeyError:
-        sys.exit('Please specify build matrix')
+    build_path = Path(path, params['build_path']).resolve()
+    makefile_path = Path(path, params['makefile_path']).resolve()
 
-    try:
-        option = to_list(matrix['option'])
-    except KeyError:
-        sys.exit('Please specify option')
+    matrix = params['matrix']
 
-    try:
-        threads = to_list(matrix['threads'])
-    except KeyError:
-        sys.exit('Please specify threads')
+    option = to_list(matrix['option'])
 
-    try:
-        columns = to_list(matrix['columns'])
-    except KeyError:
-        sys.exit('Please specify columns')
+    threads = to_list(matrix['threads'])
+    columns = to_list(matrix['columns'])
 
-    try:
-        sponge = to_list(matrix['sponge'])
-    except KeyError:
-        sys.exit('Please specify sponge')
+    sponge = to_list(matrix['sponge'])
+    rounds = to_list(matrix['rounds'])
+    blocks = to_list(matrix['blocks'])
 
-    try:
-        rounds = to_list(matrix['rounds'])
-    except KeyError:
-        sys.exit('Please specify rounds')
-
-    try:
-        blocks = to_list(matrix['blocks'])
-    except KeyError:
-        sys.exit('Please specify blocks')
-
-    try:
-        bench = to_list(matrix['bench'])
-    except KeyError:
-        sys.exit('Please specify bench')
+    bench = to_list(matrix['bench'])
 
     try:
         CFLAGS = ' '.join(to_list(params['CFLAGS']))
@@ -86,6 +175,8 @@ def make_lyra2(params):
             option, threads, columns, sponge, rounds, blocks, bench
     ):
 
+        sponge = '-'.join(sponge.lower().split(' '))
+
         name = 'lyra2-' + option
         name += '-threads-' + str(threads)
         name += '-columns-' + str(columns)
@@ -93,13 +184,25 @@ def make_lyra2(params):
         name += '-rounds-' + str(rounds)
         name += '-blocks-' + str(blocks)
 
+        if sponge == 'blake2b':
+            sponge = 0
+        elif sponge == 'blamka':
+            sponge = 1
+        elif sponge == 'half-round-blamka':
+            sponge = 2
+        else:
+            sys.exit('Did not recognize sponge name: ' + sponge)
+
         parameters = 'parameters='
         parameters += ' -DnPARALLEL=' + str(threads)
         parameters += ' -DN_COLS=' + str(columns)
-        parameters += ' -DSPONSE=' + str(sponge)
+        parameters += ' -DSPONGE=' + str(sponge)
         parameters += ' -DRHO=' + str(rounds)
         parameters += ' -DBLOCK_LEN_INT64=' + str(blocks)
         parameters += ' -DBENCH=' + str(bench)
+
+        print('Trying to call make with these:')
+        print(makefile_path, makefile_path.parent)
 
         process = subprocess.run([
             'make', option,
@@ -114,67 +217,18 @@ def make_lyra2(params):
 
 if __name__ == '__main__':
     import yaml
+    from argparse import ArgumentParser
 
-    with open('lyra2.yml', 'r') as config:
-        make_lyra2(yaml.load(config))
+    parser = ArgumentParser(description="Friendly compilation frontend")
 
-    # from argparse import ArgumentParser
+    parser.add_argument(
+        '--yaml', default=Path(__file__).resolve().parent.joinpath('lyra2.yml'),
+        help='Location of settings file'
+    )
 
-    # parser = ArgumentParser(description="Friendly compilation frontend")
+    args = parser.parse_args()
 
-    # parser.add_argument(
-    #     "option", default="generic-x86-64", choices=[
-    #         "generic-x86-64", "linux-x86-64-sse",
-    #         "cygwin-x86-64", "cygwin-x86-64-sse",
-    #         "linux-x86-64-cuda", "linux-x86-64-cuda-attack",
-    #         "clean"
-    #     ], help="Compilation target for make"
-    # )
+    with open(args.yaml, 'r') as config:
+        params = yaml.load(config)
 
-    # parser.add_argument(
-    #     "--mcost", type=int, default=256, choices=[
-    #         16, 32, 64, 96, 128, 256, 512, 1024, 2048
-    #     ], help="Number of columns, only use tested values"
-    # )
-
-    # parser.add_argument(
-    #     "--nthreads", type=int, default=1,
-    #     help="Number of threads to use, must be positive"
-    # )
-
-    # parser.add_argument(
-    #     "--nrounds", type=int, default=1, choices=list(range(1, 13)),
-    #     help="Number of rounds performed by reduced sponge function"
-    # )
-
-    # parser.add_argument(
-    #     "--nblocks", type=int, default=12, choices=[8, 10, 12],
-    #     help="Number of sponge blocks, bitrate"
-    # )
-
-    # parser.add_argument(
-    #     "--sponge", type=int, default=1, choices=[0, 1, 2],
-    #     help="Sponge function to use "\
-    #     "(0 is Blake2b, 1 is BlaMka, 2 is half-round BlaMka)"
-    # )
-
-    # parser.add_argument(
-    #     "--bench", type=bool, default=False,
-    #     help="Executable with built-in benchmarking"
-    # )
-
-    # args = parser.parse_args()
-
-    # if args.nthreads <= 0:
-    #     raise RuntimeError(
-    #         "--nthreads must be positive, was {}".format(args.nthreads)
-    #     )
-
-    # make_lyra2(
-    #     option=args.option,
-    #     nCols=args.mcost,
-    #     nThreads=args.nthreads,
-    #     nRoundsSponge=args.nrounds,
-    #     bSponge=args.nblocks,
-    #     sponge=args.sponge
-    # )
+    make_lyra2(params)
