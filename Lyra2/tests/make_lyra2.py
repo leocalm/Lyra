@@ -104,7 +104,7 @@ def make_lyra2(params):
         process = subprocess.run([
             'make', option,
             'BINDIR=' + str(build_path),
-            'BIN=' + name,
+            'BIN=' + str(build_path.joinpath(name)),
             parameters,
             'CFLAGS=' + CFLAGS,
             '--makefile', str(makefile_path),
