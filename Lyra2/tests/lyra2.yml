@@ -1,0 +1,36 @@
+build_path: ../build
+makefile_path: ../src/makefile
+
+matrix:
+  option: generic-x86-64
+  columns:
+    - 16
+    - 96
+    - 1024
+  threads: 1
+  sponge:
+    - 0
+    - 1
+    - 2
+  rounds:
+    - 1
+    - 12
+  blocks:
+    - 8
+    - 10
+    - 12
+  bench: 0
+
+CFLAGS:
+  - -std=c99
+  - -Wall
+  - -pedantic
+  - -O3
+  - -msse2
+  - -ftree-vectorizer-verbose=1
+  - -fopenmp
+  - -funroll-loops
+  - -march=native
+  - -Ofast
+  - -mprefer-avx128
+  - -flto
