@@ -1,7 +1,5 @@
 build_path: ../build
-hashes_path: ./hashes
 makefile_path: ../src/makefile
-
 
 matrix:
   option: generic-x86-64
@@ -23,8 +21,9 @@ matrix:
     - 12
   bench: 0
 
+data_path: ./data
 
-hashes-s:
+data:
   pwd:
     - password
     - 1234567890
