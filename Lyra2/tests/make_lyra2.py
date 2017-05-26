@@ -131,6 +131,16 @@ def valid_lyra2_params_or_exit(params):
             sys.exit('Bench ' + b + ' is not valid')
 
 
+def compose_lyra2_name(option, threads, columns, sponge, rounds, blocks):
+    return \
+        'lyra2-'    + option       + \
+        '-threads-' + str(threads) + \
+        '-columns-' + str(columns) + \
+        '-sponge-'  + str(sponge)  + \
+        '-rounds-'  + str(rounds)  + \
+        '-blocks-'  + str(blocks)
+
+
 def make_lyra2(params):
     """
     Build Lyra2 using the existing makefile
@@ -174,15 +184,11 @@ def make_lyra2(params):
     for option, threads, columns, sponge, rounds, blocks, bench in itertools.product(
             option, threads, columns, sponge, rounds, blocks, bench
     ):
-
         sponge = '-'.join(sponge.lower().split(' '))
 
-        name = 'lyra2-' + option
-        name += '-threads-' + str(threads)
-        name += '-columns-' + str(columns)
-        name += '-sponge-' + str(sponge)
-        name += '-rounds-' + str(rounds)
-        name += '-blocks-' + str(blocks)
+        name = compose_lyra2_name(
+            option, threads, columns, sponge, rounds, blocks
+        )
 
         if sponge == 'blake2b':
             sponge = 0
