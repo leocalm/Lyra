@@ -131,6 +131,40 @@ def valid_lyra2_params_or_exit(params):
             sys.exit('Bench ' + b + ' is not valid')
 
 
+def valid_lyra2_hashes_or_exit(params):
+    valid_lyra2_params_or_exit(params)
+
+    try:
+        hashes_s = params['hashes-s']
+    except KeyError:
+        sys.exit('Please specify hashes-s:')
+
+    try:
+        pwd = hashes_s['pwd']
+    except KeyError:
+        sys.exit('Please specify hashes-s: pwd:')
+
+    try:
+        salt = hashes_s['salt']
+    except KeyError:
+        sys.exit('Please specify hashes-s: salt:')
+
+    try:
+        klen = hashes_s['klen']
+    except KeyError:
+        sys.exit('Please specify hashes-s: klen:')
+
+    try:
+        tcost = hashes_s['tcost']
+    except KeyError:
+        sys.exit('Please specify hashes-s: tcost:')
+
+    try:
+        mcost = hashes_s['mcost']
+    except KeyError:
+        sys.exit('Please specify hashes-s: mcost:')
+
+
 def compose_lyra2_name(option, threads, columns, sponge, rounds, blocks):
     return \
         'lyra2-'    + option       + \
@@ -139,6 +173,26 @@ def compose_lyra2_name(option, threads, columns, sponge, rounds, blocks):
         '-sponge-'  + str(sponge)  + \
         '-rounds-'  + str(rounds)  + \
         '-blocks-'  + str(blocks)
+
+
+def compose_sponge_name_or_exit(sponge):
+    sponge = '-'.join(sponge.lower().split(' '))
+
+    if sponge == 'blake2b':
+        return [sponge, 0]
+    elif sponge == 'blamka':
+        return [sponge, 1]
+    elif sponge == 'half-round-blamka':
+        return [sponge, 2]
+
+    sys.exit('Failed to guess sponge from ' + sponge)
+
+
+def foreach_entry(params, name, callback):
+    values = [m for m in map(to_list, params[name].values())]
+
+    for value in itertools.product(*values):
+        callback(dict(zip(params[name], value)), params)
 
 
 def make_lyra2(params):
@@ -158,10 +212,68 @@ def make_lyra2(params):
 
     valid_lyra2_params_or_exit(params)
 
+    foreach_entry(params, 'matrix', make_lyra2_callback)
+
+
+def make_lyra2_callback(current, params):
+
     path = Path(__file__).parent
 
     build_path = Path(path, params['build_path']).resolve()
     makefile_path = Path(path, params['makefile_path']).resolve()
+
+    option = current['option']
+
+    threads = current['threads']
+    columns = current['columns']
+
+    sponge = current['sponge']
+    rounds = current['rounds']
+    blocks = current['blocks']
+
+    bench = current['bench']
+
+    try:
+        CFLAGS = ' '.join(to_list(params['CFLAGS']))
+    except KeyError:
+        CFLAGS = ''
+
+    [sponge, sponge_idx] = compose_sponge_name_or_exit(sponge)
+
+    name = compose_lyra2_name(
+        option, threads, columns, sponge, rounds, blocks
+    )
+
+    parameters = 'parameters='
+    parameters += ' -DnPARALLEL=' + str(threads)
+    parameters += ' -DN_COLS=' + str(columns)
+    parameters += ' -DSPONGE=' + str(sponge_idx)
+    parameters += ' -DRHO=' + str(rounds)
+    parameters += ' -DBLOCK_LEN_INT64=' + str(blocks)
+    parameters += ' -DBENCH=' + str(bench)
+
+    print('Trying to call make with these:')
+    print(makefile_path, makefile_path.parent)
+
+    process = subprocess.run([
+        'make', option,
+        'BINDIR=' + str(build_path),
+        'BIN=' + str(build_path.joinpath(name)),
+        parameters,
+        'CFLAGS=' + CFLAGS,
+        '--makefile', str(makefile_path),
+        '--directory', str(makefile_path.parent),
+    ])
+
+
+def compute_hashes(params):
+
+    valid_lyra2_hashes_or_exit(params)
+
+    path = Path(__file__).parent
+
+    build_path = Path(path, params['build_path']).resolve()
+    hashes_path = Path(path, params['hashes_path']).resolve()
 
     matrix = params['matrix']
 
@@ -173,13 +285,6 @@ def make_lyra2(params):
     sponge = to_list(matrix['sponge'])
     rounds = to_list(matrix['rounds'])
     blocks = to_list(matrix['blocks'])
-
-    bench = to_list(matrix['bench'])
-
-    try:
-        CFLAGS = ' '.join(to_list(params['CFLAGS']))
-    except KeyError:
-        CFLAGS = ''
 
     for option, threads, columns, sponge, rounds, blocks, bench in itertools.product(
             option, threads, columns, sponge, rounds, blocks, bench
@@ -199,26 +304,7 @@ def make_lyra2(params):
         else:
             sys.exit('Did not recognize sponge name: ' + sponge)
 
-        parameters = 'parameters='
-        parameters += ' -DnPARALLEL=' + str(threads)
-        parameters += ' -DN_COLS=' + str(columns)
-        parameters += ' -DSPONGE=' + str(sponge)
-        parameters += ' -DRHO=' + str(rounds)
-        parameters += ' -DBLOCK_LEN_INT64=' + str(blocks)
-        parameters += ' -DBENCH=' + str(bench)
-
-        print('Trying to call make with these:')
-        print(makefile_path, makefile_path.parent)
-
-        process = subprocess.run([
-            'make', option,
-            'BINDIR=' + str(build_path),
-            'BIN=' + str(build_path.joinpath(name)),
-            parameters,
-            'CFLAGS=' + CFLAGS,
-            '--makefile', str(makefile_path),
-            '--directory', str(makefile_path.parent),
-        ])
+        process = subprocess.run([])
 
 
 if __name__ == '__main__':
