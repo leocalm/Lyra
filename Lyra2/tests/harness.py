@@ -293,7 +293,10 @@ def compute_data(params):
             tcost = str(data['tcost'])
             mcost = str(data['mcost'])
 
-            process = subprocess.run([name, pwd, salt, klen, tcost, mcost])
+            process = subprocess.run(
+                [name, pwd, salt, klen, tcost, mcost],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
 
             print(process)
 
