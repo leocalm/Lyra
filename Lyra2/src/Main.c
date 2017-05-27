@@ -1,8 +1,8 @@
 /**
  * A simple main function for running the Lyra2 Password Hashing Scheme (PHS).
- * 
+ *
  * Author: The Lyra PHC team (http://www.lyra2.net/) -- 2015.
- * 
+ *
  * This software is hereby placed in the public domain.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ''AS IS'' AND ANY EXPRESS
@@ -34,8 +34,8 @@
 /**
  * Generates the test vectors for Lyra2.
  *
- * @param t     Parameter to determine the processing time (T)
- * @param r     Memory cost parameter (defines the number of rows of the memory matrix, R)
+ * @param t         Parameter to determine the processing time (T)
+ * @param m_cost    Memory cost parameter (defines the number of rows of the memory matrix, R)
  */
 int testVectors(unsigned int t, unsigned int m_cost) {
     //=================== Basic variables, with default values =======================//
@@ -55,7 +55,7 @@ int testVectors(unsigned int t, unsigned int m_cost) {
     unsigned char *K = malloc(kLen);
 
     /* Generating vectors with the input size varying from 0 to 128 bytes,
-     * and values varying from 0 to 127. The salt size is fixed in 16 bytes, 
+     * and values varying from 0 to 127. The salt size is fixed to 16 bytes,
      * and its value varies from 0 to 256.
      */
     for (countSample = 0; countSample <= 128; countSample++) {
@@ -83,7 +83,7 @@ int testVectors(unsigned int t, unsigned int m_cost) {
         printf("t_costs: %d\n", t);
         printf("m_costs: \tR: %d \tC: %d\n", m_cost, N_COLS);
         printf("parallelism: %u\n", nPARALLEL);
-    
+
         char *spongeName ="";
         if (SPONGE==0){
             spongeName = "Blake2";
@@ -122,33 +122,33 @@ int testVectors(unsigned int t, unsigned int m_cost) {
     }
 
     /* Generating vectors with the input size varying from 0 to 128 bytes,
-     * and values varying from 128 to 255. The salt size is fixed in 16 bytes, 
+     * and values varying from 128 to 255. The salt size is fixed to 16 bytes,
      * and its value varies from 0 to 256.
      */
     for (countSample = 128; countSample <= 256; countSample++) {
-	pwdLen = countSample - 127;
-	int count;
-	pwd = malloc(sizeof (pwd) * pwdLen);
-	for (count = 0; count < pwdLen; count++) {
-	    pwd[count] = count + 128;
-	}
+        pwdLen = countSample - 127;
+        int count;
+        pwd = malloc(sizeof (pwd) * pwdLen);
+        for (count = 0; count < pwdLen; count++) {
+            pwd[count] = count + 128;
+        }
 
-	salt = malloc(sizeof (salt) * saltLen);
-	for (count = 0; count < saltLen; count++) {
-	    salt[count] = saltLen * indexSalt + count;
-	}
-	indexSalt++;
-	if (indexSalt == saltLen)
-	    indexSalt = 0;
+        salt = malloc(sizeof (salt) * saltLen);
+        for (count = 0; count < saltLen; count++) {
+            salt[count] = saltLen * indexSalt + count;
+        }
+        indexSalt++;
+        if (indexSalt == saltLen)
+            indexSalt = 0;
 
-	PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, m_cost);
+        PHS(K, kLen, pwd, pwdLen, salt, saltLen, t, m_cost);
 
-	printf("\ninlen: %d\n", pwdLen);
+        printf("\ninlen: %d\n", pwdLen);
         printf("outlen: %d\n", kLen);
         printf("t_costs: %d\n", t);
         printf("m_costs: \tR: %d \tC: %d\n", m_cost, N_COLS);
         printf("parallelism: %u\n", nPARALLEL);
-    
+
         char *spongeName ="";
         if (SPONGE==0){
             spongeName = "Blake2";
@@ -163,23 +163,23 @@ int testVectors(unsigned int t, unsigned int m_cost) {
         printf("sponge: %s\n", spongeName);
         printf("sponge blocks (bitrate): %u = %u bits\n", BLOCK_LEN_INT64, BLOCK_LEN_INT64*64);
 
-	printf("In: ");
-	for (i = 0; i < pwdLen; i++) {
-	    printf("%02x ", pwd[i]);
-	}
-	printf("\n");
+        printf("In: ");
+        for (i = 0; i < pwdLen; i++) {
+            printf("%02x ", pwd[i]);
+        }
+        printf("\n");
 
-	printf("Salt: ");
-	for (i = 0; i < saltLen; i++) {
-	    printf("%02x ", salt[i]);
-	}
-	printf("\n");
+        printf("Salt: ");
+        for (i = 0; i < saltLen; i++) {
+            printf("%02x ", salt[i]);
+        }
+        printf("\n");
 
-	printf("Out: ");
-	for (i = 0; i < kLen; i++) {
-	    printf("%02x ", K[i]);
-	}
-	printf("\n");
+        printf("Out: ");
+        for (i = 0; i < kLen; i++) {
+            printf("%02x ", K[i]);
+        }
+        printf("\n");
     }
     return 0;
 }
@@ -253,9 +253,9 @@ int main(int argc, char *argv[]) {
         printf("(nRows / 2) mod p must be = 0\n");
         return 1;
     }
-    
+
     unsigned char *K = malloc(kLen);
-   
+
     printf("Inputs: \n");
     printf("\tPassword: %s\n", pwd);
     printf("\tPassword Length: %u\n", pwdLen);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     printf("\tR: %u\n", m_cost);
     printf("\tC: %u\n", N_COLS);
     printf("\tParallelism: %u\n", nPARALLEL);
-    
+
     char *spongeName ="";
     if (SPONGE==0){
         spongeName = "Blake2";
@@ -280,10 +280,10 @@ int main(int argc, char *argv[]) {
     else{
         spongeName = "half-round BlaMka";
     }
-    
+
     printf("\tSponge: %s\n", spongeName);
     printf("\tSponge Blocks (bitrate): %u = %u bits\n", BLOCK_LEN_INT64, BLOCK_LEN_INT64*64);
-    
+
     size_t sizeMemMatrix = (size_t) ((size_t)m_cost * (size_t)ROW_LEN_BYTES);
 
     if(sizeMemMatrix > (1610612736)){
@@ -292,19 +292,18 @@ int main(int argc, char *argv[]) {
     }else{
         printf("\tMemory: %ld bytes\n", sizeMemMatrix);
     }
-        
 
     printf("------------------------------------------------------------------------------------------------------------------------------------------\n");
-    
+
 #if (BENCH == 1)
     struct timeval start;
     struct timeval end;
     gettimeofday(&start, NULL);
 #endif
     int result;
-    
+
     result = PHS(K, kLen, pwd, pwdLen, salt, saltLen, t_cost, m_cost);
-    
+
 #if (BENCH == 1)
     gettimeofday(&end, NULL);
     unsigned long elapsed = (end.tv_sec-start.tv_sec)*1000000 + end.tv_usec-start.tv_usec;
@@ -336,4 +335,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
