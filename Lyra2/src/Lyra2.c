@@ -85,7 +85,10 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
 
     uint64_t i;                 //auxiliary iteration counter
     //==========================================================================/
-    
+    if (nRows < 3)
+      return -1;
+    if (timeCost < 1)
+      return -1;
     //========== Initializing the Memory Matrix and pointers to it =============//
     //Tries to allocate enough space for the whole memory matrix
     i = (uint64_t) ((uint64_t) nRows * (uint64_t) ROW_LEN_BYTES);
@@ -290,6 +293,11 @@ int LYRA2(void *K, unsigned int kLen, const void *pwd, unsigned int pwdlen, cons
     if (pKeys == NULL) {
         return -1;
     }
+
+    if (nRows < 3)
+      return -1;
+    if (timeCost < 1)
+      return -1;
 
 #if _OPENMP <= 201107  //OpenMP 3.X or less 
     #pragma omp parallel num_threads(nPARALLEL) default(none) /*private(pwd)*/ shared(memMatrix,  pKeys, pwd, pwdlen, salt, saltlen, nRows, nCols, kLen, timeCost)
