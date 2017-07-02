@@ -251,7 +251,7 @@ def build_lyra2(params):
         parameters += ' -DBLOCK_LEN_INT64=' + str(blocks)
         parameters += ' -DBENCH=' + str(bench)
 
-        logger.debug('Will be calling make with these these:')
+        logger.debug('Will be calling make with these:')
         logger.debug('--makefile ' + str(makefile_path))
         logger.debug('--directory ' + str(makefile_path.parent))
 
