@@ -1,4 +1,4 @@
-build_path: ../build
+build_path: ../bin42
 makefile_path: ../src/makefile
 
 matrix:

@@ -3,7 +3,7 @@ import subprocess
 
 from pathlib import Path
 
-bindir = Path(__file__).parent.parent.joinpath('bin')
+bindir = Path(__file__).parent.parent.joinpath('bin42')
 
 @pytest.mark.parametrize(
     'path', list(bindir.glob("lyra2-*"))
