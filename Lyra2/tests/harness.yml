@@ -31,7 +31,7 @@ matrix:
 data_path: ./data
 
 data:
-  pwd:
+  pass:
     # below is a   1 character password
     - p
     - password
