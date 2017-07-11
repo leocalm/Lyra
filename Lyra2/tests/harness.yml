@@ -32,23 +32,35 @@ data_path: ./data
 
 data:
   pwd:
+    # below is a   1 character password
+    - p
     - password
-    - 1234567890
-    - qwerty
-    - asdfgh
+    # below is a 120 character password
+    - pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
+    # below is a 128 character password
+    - pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
   salt:
+    # below is a   1 character salt
+    - s
     - salt
-    - saltsalt
-    - saltsaltsalt
+    # below is a 120 character salt
+    - ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+    # below is a 128 character salt
+    - ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
   klen:
     - 1
     - 10
+    - 250
+    - 1020
   tcost:
     - 1
     - 10
+    - 100
   mcost:
+    # memory cost (mcost) must be >= 3 rows
     - 3
     - 10
+    - 100
 
 
 CFLAGS:
