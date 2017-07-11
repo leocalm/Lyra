@@ -155,9 +155,9 @@ def valid_lyra2_hashes_or_exit(params):
         sys.exit('Please specify data:')
 
     try:
-        pwd = data['pwd']
+        pwd = data['pass']
     except KeyError:
-        sys.exit('Please specify data: pwd:')
+        sys.exit('Please specify data: pass:')
 
     try:
         salt = data['salt']
@@ -189,6 +189,11 @@ def compose_lyra2_name(option, threads, columns, sponge, rounds, blocks):
         '-blocks-'  + str(blocks)
 
 def compose_sponge_name(sponge):
+    """
+    Convert sponge to lowercase, replaces spaces with dashes
+
+    Also return a hard-coded index for the original makefile
+    """
     sponge = '-'.join(sponge.lower().split(' '))
 
     if sponge == 'blake2b':
@@ -395,7 +400,7 @@ def valid_lyra2_output(out):
         logger.warning('len({}) != {}'.format(data, klen))
 
     return {
-        'pwd': pwd,
+        'pass': pwd,
         'salt': salt,
         'klen': klen,
         'tcost': tcost,
@@ -451,10 +456,10 @@ def compute_data(params):
 
             continue
 
-        data = {}
+        data = []
 
         for i, entry in enumerate(unlist_values(params['data'])):
-            pwd = str(entry['pwd'])
+            pwd = str(entry['pass'])
             salt = str(entry['salt'])
             klen = str(entry['klen'])
             tcost = str(entry['tcost'])
@@ -466,7 +471,7 @@ def compute_data(params):
             )
 
             logger.info(
-                'Compute pwd: {} salt: {} klen: {} tcost: {} mcost: {}'.format(
+                'Compute pass: {} salt: {} klen: {} tcost: {} mcost: {}'.format(
                 pwd, salt, klen, tcost, mcost
             ))
 
@@ -480,7 +485,13 @@ def compute_data(params):
 
             out = valid_lyra2_output(process.stdout)
 
-            data['entry' + str(i)] = out
+            # Lyra executable does not print rounds, so add it here:
+            out['rounds'] = rounds
+            # Lyra executable prints Blake2 instead of Blake2b
+            # Use sponge names by compose_sponge_name instead
+            out['sponge'] = sponge
+
+            data.append(out)
 
             logger.info('Result: ' + ' '.join(out['hash']))
 
@@ -488,7 +499,7 @@ def compute_data(params):
                 logger.warning(process.stderr)
 
         with open(data_file, 'w') as dst:
-            yaml.dump(data, dst)
+            yaml.dump_all(data, dst)
 
 if __name__ == '__main__':
     import yaml
