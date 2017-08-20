@@ -1,0 +1,143 @@
+build_path: ../bin42
+makefile_path: ../src/makefile
+
+matrix:
+  option: generic-x86-64
+  threads: 1
+  columns:
+    - 16
+    - 96
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 2048
+  sponge:
+    - Blake2b
+    - BlaMka
+    - half-round BlaMka
+  rounds:
+    - 1
+    - 5
+    - 6
+    - 7
+    - 12
+  blocks:
+    - 8
+    - 10
+    - 12
+  bench: 0
+
+data_path: ./data
+
+data:
+  pass:
+    # below is a   1 character password
+    - p
+    - password
+    # below is a 120 character password
+    - pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
+    # below is a 128 character password
+    - pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
+  salt:
+    # below is a   1 character salt
+    - s
+    - salt
+    # below is a 120 character salt
+    - ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+    # below is a 128 character salt
+    - ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+  klen:
+    - 1
+    - 10
+    - 250
+    - 1020
+  tcost:
+    - 1
+    - 10
+    - 100
+  mcost:
+    # memory cost (mcost) must be >= 3 rows
+    - 3
+    - 10
+    - 100
+
+
+CFLAGS:
+  - -std=c99
+  - -Wall
+  - -pedantic
+  - -O3
+  - -msse2
+  - -ftree-vectorizer-verbose=1
+  - -fopenmp
+  - -funroll-loops
+  - -march=native
+  - -Ofast
+  - -mprefer-avx128
+  - -flto
+
+
+logging:
+  version: 1
+  formatters:
+    simple:
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: DEBUG
+      formatter: simple
+  loggers:
+    __main__:
+      level: DEBUG
+      handlers: [console]
+      propagate: no
+  # root:
+  #   level: DEBUG
+  #   handlers: [console]
+
+
+valid:
+  option:
+    - generic-x86-64
+    - linux-x86-64-sse
+    - cygwin-x86-64
+    - cygwin-x86-64-sse
+    - linux-x86-64-cuda
+    - linux-x86-64-cuda-attack
+  threads: 1
+  columns:
+    - 16
+    - 32
+    - 64
+    - 96
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 2048
+  sponge:
+    - Blake2b
+    - BlaMka
+    - half-round BlaMka
+  rounds:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+  blocks:
+    - 8
+    - 10
+    - 12
+  bench:
+    - True
+    - False
